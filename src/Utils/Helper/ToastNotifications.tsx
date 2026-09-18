@@ -1,9 +1,10 @@
+import { useCallback } from 'react';
 import { toast, ToastOptions } from 'react-toastify';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export const useToast = () => {
-  const showToast = (type: ToastType, message: string, options?: ToastOptions) => {
+  const showToast = useCallback((type: ToastType, message: string, options?: ToastOptions) => {
     if (!message?.trim()) return;
 
     const config: ToastOptions = {
@@ -34,7 +35,7 @@ export const useToast = () => {
       default:
         toast(message, config);
     }
-  };
+  }, []);
 
   return { showToast };
 };
