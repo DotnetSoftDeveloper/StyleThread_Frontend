@@ -1,0 +1,316 @@
+/* From Uiverse.io by doniaskima */
+.inputContainer {
+  position: relative;
+  /* margin-bottom: 20px; */
+  display: inline-block;
+  margin-right: 1rem;
+  margin-bottom: 50px;
+  vertical-align: top;
+  width: 30%;
+}
+.customDrodown{
+  margin-top: 43px;
+  width: 228px;
+  font-size: 16px;
+  background-color: transparent;
+  border: none;
+  border-bottom: transparent;
+  outline: none;
+  transition: border-color 0.3s ease;
+  color: #0b4cd3;
+  padding-bottom: 0;
+  padding-right: 0;
+}
+
+.customInput {
+  margin-top: 10px;
+  width: 248px;
+  padding-top: 25px;
+  font-size: 16px;
+  background-color: transparent;
+  border: none;
+  border-bottom: transparent;
+  outline: none;
+  transition: border-color 0.3s ease;
+  color: #0b4cd3;
+  padding-left: 21px;
+  padding-bottom: 0;
+  padding-right: 0;
+}
+.customInput.description {
+  width: 247px;
+  height: 38px;
+  margin-top: 22px;
+  padding: 12px;
+  padding-left: 21px;
+}
+
+.inputLabel {
+  font-weight: 600;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  font-size: 16px;
+  color: #000000;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.customInput:focus + .inputLabel,
+.customInput:not(:placeholder-shown) + .inputLabel {
+  transform: translateY(-100%) translateX(-5px) scale(0.8);
+}
+
+.inputUnderline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #2554d6;
+}
+.variant-section {
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.variant-section.active {
+  border-color: #000000;
+    border-radius: 10px;
+}
+
+.variant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.variant-details {
+  margin-top: 10px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.icon {
+  font-size: 1.2em;
+}
+.row>* {
+  padding-right: 0;
+  padding-left: 22px !important;
+  margin-left: 0 !important ;
+}
+
+/* .addSpan {
+  font-size: 20px !important;
+  margin-left: 55% !important;
+} */
+.add-form{
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: row; /* Change to row to align items horizontally */
+  flex-wrap: wrap; /* Allow wrapping for smaller screens */
+  gap: 20px; /* Increased space between fields */
+  padding: 20px; /* Added padding to the form container */
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 1rem;
+  margin-top: 30px;
+}
+
+.add-product-variant{
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: row;  
+  flex-wrap: wrap;  
+  padding: 20px;  
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.add-product-container {
+  margin: 20px;
+}
+.product-variants-container {
+  width: 100%;
+}
+.variant-count {
+  display: flex;
+  align-items: center;
+}
+
+.variants-and-count {
+  display: flex;
+  flex-direction: row;
+}
+
+.variant-header {
+  padding: 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.variant-header.selected {
+  background-color: lightblue; /* Light blue color */
+}
+.header-container {
+  display: flex;            /* Use flexbox for layout */
+  justify-content: space-between; /* Space between heading and button */
+  align-items: center;      /* Center items vertically */
+  margin-bottom: 1rem;      /* Space below the header */
+  width: 100%;
+}
+
+.deleteButton {
+  display: flex;            /* Use flexbox for the delete button */
+  align-items: center;      /* Center the icon vertically */
+}
+
+.icon {
+  cursor: pointer;          /* Change cursor to pointer on hover */
+  color: #324dfe;          /* Optional: set color for the trash icon */
+  transition: color 0.3s;  /* Optional: smooth transition for color change */
+}
+
+.icon:hover {
+  color: hwb(0 4% 10%);          /* Optional: change color on hover */
+}
+
+.uploadImage{
+  /* background-color: white !important; */
+  margin-top: 2px;
+  width: 248px;
+  padding-top: 25px;
+  font-size: 16px;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  transition: border-color 0.3s ease;
+  color: #0b4cd3;
+  padding-left: 21px;
+  padding-bottom: 0;
+  padding-right: 0;
+}
+.image-previews img {
+  width: 105px;
+  height: 110px;
+}
+.close-button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: rgb(0 0 0);
+  border: none;
+  border-radius: 50%;
+  color: #333;
+  font-size: 24px;
+  width: 22px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px;
+  color: white;
+}
+.variant-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.variant-col {
+  flex: 1;
+  padding: 10px;
+}
+
+.image-previews {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.image-preview-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.close-button {
+  /* position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: none;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 14px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center; */
+  position: "absolute";
+  top: "5px";
+  right: "5px";
+  background: "red";
+  color: "white";
+  border: "none";
+  border-radius: "50%";
+  width: "24px";
+  height: "24px";
+  cursor: "pointer";
+  font-size: "18px";
+  display: "flex";
+  align-items: "center";
+  justify-content: "center";
+}
+
+.css-nalcay-control {
+  border-color: transparent;
+}
+
+.submitContainer{
+  position: relative;
+  left: -45px;
+  bottom: -17px;
+  display: flex;
+  justify-content: end;
+}
+
+.product-submission-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  color: #183153;
+  font-weight: 600;
+}
+
+.product-submission-loader .noContent-animation {
+  width: 8rem;
+  height: 8rem;
+}

@@ -1,0 +1,236 @@
+.address-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.address-screen textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  resize: vertical;
+}
+.address-form {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dbe5f4;
+  border-radius: 1rem;
+  padding: clamp(1.15rem, 3vw, 1.75rem);
+  box-shadow: 0 14px 30px rgba(30, 64, 175, 0.09);
+  animation: address-form-enter 0.28s ease-out both;
+}
+
+.address-form::before { content: ""; position: absolute; top: 0; right: 0; left: 0; height: 3px; background: linear-gradient(90deg, #2563eb, #60a5fa, #bfdbfe); }
+.address-form__header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; padding-bottom: 1.15rem; border-bottom: 1px solid #e5eaf2; }
+.address-form__icon { display: grid; width: 2.35rem; height: 2.35rem; place-items: center; border-radius: 0.7rem; background: #e8f0ff; color: #1d4ed8; font-size: 1.5rem; font-weight: 500; line-height: 1; }
+.address-form__header h3 { margin: 0; color: #172033; font-size: 1.05rem; font-weight: 800; }
+.address-form__header p { margin: 0.22rem 0 0; color: #667085; font-size: 0.84rem; }
+
+.location-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-btn .icon-location {
+  fill: white;
+}
+
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid #d7dee9;
+  border-radius: 0.5rem;
+  outline-offset: 2px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.input-group input:focus,
+.input-group textarea:focus,
+.input-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.input-group label {
+  margin-bottom: 0.42rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: #475467;
+  letter-spacing: 0.01em;
+}
+
+.textarea-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.select-group label {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.address-type {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.address-type legend {
+  grid-column: 1 / -1;
+  padding: 0;
+  font-weight: 700;
+  margin-bottom: 0.1rem;
+  color: #475467;
+  font-size: 0.78rem;
+}
+
+.address-type label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 0.65rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.address-type label:hover { border-color: #9fb9e7; }
+.address-type label.is-active { border-color: #2563eb; background: #f4f8ff; box-shadow: 0 0 0 3px #dbeafe; }
+.address-type label span { display: flex; flex-direction: column; gap: 0.15rem; color: #344054; font-size: 0.82rem; }
+.address-type label strong { color: #172033; font-size: 0.88rem; }
+.address-type label small { color: #667085; font-size: 0.72rem; }
+
+.address-type input[type="radio"] {
+  cursor: pointer;
+  margin-top: 0.15rem;
+  accent-color: #2563eb;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.btn-save {
+  background-color: #0077ff;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-save:hover {
+  background-color: #005ecb;
+}
+
+.btn-cancel {
+  background-color: #eee;
+  border: none;
+  color: #555;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background-color: #ddd;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.address-option{
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #fff;
+  border: 1px solid #e1e7f0;
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.7rem;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.address-option:hover { border-color: #b9cbed; box-shadow: 0 5px 14px rgba(30, 64, 175, 0.06); transform: translateY(-1px); }
+.address-option.is-selected { border-color: #2563eb; background: #f4f8ff; box-shadow: 0 0 0 3px #dbeafe; }
+.address-option input { width: 1rem; height: 1rem; margin: 0; accent-color: #2563eb; flex: 0 0 auto; }
+.address-option label { color: #344054; font-size: 0.92rem; line-height: 1.55; cursor: pointer; }
+.address-option--new { padding: 0; border-style: dashed; background: #fbfdff; }
+
+.addNewAddress{
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: #1d4ed8;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.addNewAddress:hover { background: #eff6ff; color: #1e40af; }
+
+.address-screen__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e8ebf2; }
+.address-screen__heading h2 { margin: 0; color: #172033; font-size: 1.3rem; font-weight: 750; }
+.address-screen__heading p { margin: 0.35rem 0 0; color: #667085; font-size: 0.9rem; }
+.address-screen__secure { padding: 0.4rem 0.6rem; border-radius: 999px; background: #ecfdf3; color: #027a48; font-size: 0.72rem; font-weight: 750; white-space: nowrap; }
+.address-list { display: flex; flex-direction: column; }
+
+.address-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e8ebf2; }
+.address-actions--selection { justify-content: space-between; }
+.address-action { min-width: 7.5rem; padding: 0.78rem 1rem; border-radius: 0.55rem; font-size: 0.9rem; font-weight: 750; cursor: pointer; transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; }
+.address-action:hover:not(:disabled) { transform: translateY(-1px); }
+.address-action--primary { border: 1px solid #1d4ed8; background: #1d4ed8; color: #fff; box-shadow: 0 4px 10px rgba(29, 78, 216, 0.2); }
+.address-action--primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; box-shadow: 0 7px 16px rgba(29, 78, 216, 0.25); }
+.address-action--primary:disabled { border-color: #cbd5e1; background: #cbd5e1; color: #f8fafc; cursor: not-allowed; box-shadow: none; }
+.address-action--secondary { border: 1px solid #d0d9e6; background: #fff; color: #475467; }
+.address-action--secondary:hover { border-color: #94a3b8; background: #f8fafc; }
+
+@keyframes address-form-enter { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 520px) {
+  .address-screen__heading { flex-direction: column; }
+  .address-actions, .address-actions--selection { justify-content: stretch; flex-direction: column-reverse; }
+  .address-action { width: 100%; }
+  .address-type { grid-template-columns: 1fr; }
+}

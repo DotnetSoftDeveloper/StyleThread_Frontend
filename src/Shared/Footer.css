@@ -1,0 +1,32 @@
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(2rem, 5vw, 2.75rem) clamp(1.25rem, 5vw, 3rem) 1.5rem;
+  background: #1a1a1a;
+  color: #f1f1f1;
+}
+
+.footer-container *, .footer-container *::before, .footer-container *::after { box-sizing: border-box; }
+.footer-content { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.75rem, 5vw, 4rem); width: min(100%, 75rem); margin-bottom: 2rem; }
+.footer-section { min-width: 0; max-width: 20rem; }
+.footer-heading { margin: 0 0 0.875rem; font-size: 1.125rem; font-weight: 700; }
+.footer-text { margin: 0; color: #d7d7d7; font-size: 0.9375rem; line-height: 1.6; }
+.footer-links, .footer-social-links { display: grid; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
+.footer-container .nav-link, .footer-link, .footer-social-link { display: block; color: #f1f1f1; font-size: 0.9375rem; line-height: 1.4; text-decoration: none; transition: color 0.2s ease; }
+.footer-container .nav-link:hover, .footer-link:hover, .footer-social-link:hover { color: #76baff; }
+.footer-bottom { width: min(100%, 75rem); padding-top: 1.25rem; border-top: 1px solid #3a3a3a; text-align: center; }
+.footer-bottom-text { margin: 0; color: #cfcfcf; font-size: 0.875rem; }
+
+/* Tablets: the informational content gets a full row; link groups remain side-by-side. */
+@media (max-width: 700px) {
+  .footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.5rem; }
+  .footer-section:first-child { grid-column: 1 / -1; max-width: 34rem; }
+}
+
+/* Phones: each section is a comfortable full-width block. */
+@media (max-width: 440px) {
+  .footer-content { grid-template-columns: 1fr; gap: 1.75rem; }
+  .footer-section:first-child { grid-column: auto; }
+  .footer-heading { margin-bottom: 0.75rem; }
+}
