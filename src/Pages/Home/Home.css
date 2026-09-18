@@ -1,0 +1,82 @@
+.home-page {
+  width: min(100%, 90rem);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.home-filter-panel,
+.home-products-panel {
+  border: 1px solid #e4e4e4;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 7%);
+}
+
+.home-filter-panel { margin-bottom: clamp(1rem, 2vw, 1.5rem); padding: 0.75rem 1rem; }
+.home-products-panel { padding: clamp(1rem, 2vw, 1.5rem); }
+
+.search-results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #364152;
+  font-size: 0.95rem;
+}
+
+.search-results-summary button {
+  border: 1px solid #cfd8e3;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.45rem 0.8rem;
+}
+
+.search-results-summary button:hover,
+.search-results-summary button:focus-visible {
+  border-color: #1d4ed8;
+  outline: none;
+}
+
+.rowDesign {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.center-loader {
+  display: grid;
+  min-height: 50vh;
+  place-items: center;
+}
+
+.search-empty-state {
+  grid-column: 1 / -1;
+  margin: 1.5rem 0;
+  color: #5b6470;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .home-page { padding: 0.75rem; }
+  .home-filter-panel { padding-inline: 0.5rem; }
+  .home-products-panel { padding: 0.75rem; }
+  .rowDesign { gap: 0.875rem; }
+}
+
+/* Laptops and tablets: fewer columns keep cards readable without empty grid space. */
+@media (max-width: 1200px) {
+  .rowDesign { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .rowDesign { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* A full-width card keeps product image, price, and discount legible on phones. */
+@media (max-width: 560px) {
+  .rowDesign { grid-template-columns: minmax(0, 1fr); }
+}

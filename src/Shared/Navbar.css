@@ -1,0 +1,95 @@
+/* === Navbar base === */
+.navbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem clamp(1rem, 3vw, 2.5rem);
+  background-color: #070809 !important;
+}
+
+body { padding-top: 64px; }
+
+.navbar-left, .navbar-right { display: flex; align-items: center; min-width: 0; }
+.navbar-left { flex-shrink: 0; }
+.navbar-right { flex-shrink: 0; gap: clamp(0.625rem, 1.5vw, 1rem); }
+.navbar-center { display: flex; flex: 1 1 12rem; justify-content: center; min-width: 0; }
+
+.ST-Logo { display: flex; align-items: center; }
+.ST-Logo img, .cart-icon img, .profile-icon img { width: 32px; height: 32px; transition: transform 0.2s ease, filter 0.2s ease; }
+.ST-Logo:hover img, .cart-icon:hover img, .profile-icon:hover img { transform: scale(1.08); filter: brightness(0.85); }
+.logo-text { margin-left: 0.75rem; color: #fff; font-family: "Bickham Script", cursive; font-size: 1.5625rem; font-style: italic; white-space: nowrap; }
+
+.nav-link { color: #fff; text-decoration: none; }
+.desktop-nav { display: flex; align-items: center; gap: clamp(0.75rem, 2vw, 1.25rem); margin-left: clamp(1rem, 3vw, 2rem); white-space: nowrap; }
+.desktop-nav a { color: #fff; text-decoration: none; font-size: 0.9375rem; }
+.desktop-nav a:hover { color: #9ed0ff; }
+
+.searchbox { position: relative; width: min(100%, 400px); }
+.input { box-sizing: border-box; width: 100%; height: 2.25rem; padding: 0 0.8rem; border: 2px solid transparent; border-radius: 0.625rem; outline: none; background: #f3f3f3; font: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+.input:hover, .input:focus { border-color: #4a9dec; box-shadow: 0 0 0 4px rgb(74 157 236 / 20%); background: #fff; }
+.searchbox .input { padding-right: 2.75rem; }
+.search-submit, .mobile-search-submit { display: grid; position: absolute; place-items: center; border: 0; background: transparent; color: #3d6f9e; cursor: pointer; }
+.search-submit { top: 0; right: 0; width: 2.5rem; height: 2.25rem; }
+.search-submit:hover, .search-submit:focus-visible, .mobile-search-submit:hover, .mobile-search-submit:focus-visible { color: #1765a7; outline: none; }
+
+.mobile-search, .mobile-menu-icon { display: none; }
+.mobile-search, .mobile-search-form { position: relative; }
+.search-icon, .mobile-menu-icon { color: #fff; cursor: pointer; font-size: 1.25rem; }
+.mobile-search .input.expanded { position: absolute; top: -0.5rem; right: 2.25rem; z-index: 1200; width: min(70vw, 18rem); padding: 0 0.625rem; }
+.mobile-search-submit { top: -0.5rem; right: 2.5rem; z-index: 1201; width: 2.25rem; height: 2.25rem; }
+
+.cart-icon, .profile-icon { position: relative; display: inline-flex; cursor: pointer; }
+.cart-count { position: absolute; top: -0.5rem; right: -0.5rem; display: grid; min-width: 1.25rem; min-height: 1.25rem; place-items: center; padding: 0.125rem; border-radius: 50%; background: #43bf2d; color: #fff; font-size: 0.75rem; font-weight: 700; }
+.auth-buttons { display: flex; align-items: center; }
+.auth-buttons .nav-link { border: 0; background: transparent; cursor: pointer; font: inherit; }
+
+.mobile-menu {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  z-index: 1100;
+  display: flex;
+  width: min(100%, 20rem);
+  flex-direction: column;
+  padding: 0.5rem;
+  border-top: 1px solid #272727;
+  background: #070809;
+  box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / 25%);
+}
+.mobile-menu a, .mobile-menu button { min-height: 2.75rem; padding: 0.75rem; border: 0; background: transparent; color: #fff; cursor: pointer; font: inherit; text-align: left; text-decoration: none; }
+.mobile-menu a:hover, .mobile-menu button:hover { background: #1d1d1d; }
+
+/* Smaller laptops/tablets: replace wide navigation links with the menu drawer. */
+@media (max-width: 1050px) {
+  .desktop-nav, .desktop-auth { display: none; }
+  .mobile-menu-icon { display: block; }
+}
+
+/* Phones: use compact actions, leaving room for the logo and cart. */
+@media (max-width: 700px) {
+  .navbar { gap: 0.75rem; padding-inline: 1rem; }
+  .desktop-search { display: none; }
+  .mobile-search { display: block; }
+  .mobile-search .input.expanded {
+    position: fixed;
+    top: 4.5rem;
+    right: 1rem;
+    left: 1rem;
+    width: auto;
+    height: 2.75rem;
+    padding-inline: 0.875rem;
+    background: #fff;
+  }
+  .mobile-search-submit { position: fixed; top: 4.5rem; right: 1rem; height: 2.75rem; }
+}
+
+@media (max-width: 430px) {
+  .logo-text { display: none; }
+  .navbar-right { gap: 0.625rem; }
+  .ST-Logo img, .cart-icon img, .profile-icon img { width: 29px; height: 29px; }
+}

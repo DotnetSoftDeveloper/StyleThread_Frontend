@@ -1,0 +1,134 @@
+.add-product-container {
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  .product-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-table th, .product-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+    transition: background-color 0.3s;
+  }
+
+  .product-table th {
+    background-color: rgb(25 21 18); /* Green background */
+    color: white;
+    font-weight: bold;
+  }
+
+  .product-table tr:nth-child(even) {
+    background-color: #f2f2f2; /* Zebra striping */
+  }
+
+  .product-table tr:hover {
+    background-color: #ddd; /* Highlight row on hover */
+  }
+
+  .product-image {
+    width: 50px; /* Adjust size as needed */
+    height: auto;
+    border-radius: 5px; /* Rounded corners for images */
+  }
+
+  .product-table td {
+    vertical-align: middle; /* Center align text in cells */
+  }
+
+  .product-table td img {
+    max-width: 100%; /* Responsive image */
+    height: auto;
+  }
+  .action-buttons {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+  }
+
+  .btn {
+    border: none;
+    padding: 5px 10px !important;
+    border-radius: 5px !important; 
+    cursor: pointer !important;
+    font-size: 14px !important;
+  }
+
+  .btn-edit {
+    background-color: #4CAF50 !important; /* Green background for edit */
+    color: white !important;
+  }
+
+  .btn-delete {
+    background-color: #f44336 !important; /* Red background for delete */
+    color: white !important;
+  }
+
+  .btn:hover {
+    opacity: 0.8;
+    /* width: 0px !important; */
+    border-radius: 40px;
+    transition-duration: .3s;
+  } 
+  .filter-container {
+    margin: 20px 0;
+  }
+
+  .filter-container input {
+    margin-right: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  /* AddProduct.css */
+  .modals {
+    background-color: white;
+    padding: 20px;
+    border-radius: 4px;
+    outline: none; 
+     max-width: 400px; 
+     margin: 0 auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000; 
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+    z-index: 999; /* Ensure it appears above other elements */
+  }
+
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .modal-buttons button {
+    margin-left: 10px;
+  }
+  .center-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    margin: 0 auto;
+  }
