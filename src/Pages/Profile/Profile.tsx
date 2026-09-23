@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,6 +11,7 @@ import {
   FaPlus,
   FaRegUser,
   FaSave,
+  FaShoppingBag,
   FaStar,
   FaTimes,
   FaTrash,
@@ -20,6 +21,8 @@ import "./Profile.css";
 import profileImage from "../../Assests/people.png";
 import Loader from "../../Shared/Loader";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
+import { getCustomerOrders } from "../../Services/orderService";
+import { CustomerOrder, OrderItemDetails } from "../../Types/Interface/IOrder";
 
 interface CustomerProfile {
   customerId: number;
@@ -40,7 +43,7 @@ interface ApiResponse<T> {
 }
 
 type ProfileField = "userName" | "firstName" | "lastName" | "email" | "address" | "phoneNumber";
-type ProfileTab = "personal" | "addresses";
+type ProfileTab = "personal" | "addresses" | "orders";
 
 interface CustomerAddress {
   customerAddressId: number;
@@ -161,6 +164,10 @@ const Profile: React.FC = () => {
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
   const [addressFormData, setAddressFormData] = useState<AddressFormData>(emptyAddressForm);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const ordersRequestStarted = useRef(false);
 
   const token = useMemo(() => getStoredToken(), []);
   const fullName = `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim() || profile?.userName || "Style Thread customer";
@@ -251,6 +258,35 @@ const Profile: React.FC = () => {
       fetchAddresses();
     }
   }, [activeTab, addressLoading, addressesLoaded, fetchAddresses]);
+
+  const fetchOrders = useCallback(async (forceRefresh = false) => {
+    if (!token || ordersLoading) return;
+    if (!forceRefresh && ordersRequestStarted.current) return;
+
+    ordersRequestStarted.current = true;
+    setOrdersLoading(true);
+    try {
+      const customerOrders = await getCustomerOrders(token);
+      setOrders(customerOrders);
+    } catch (err) {
+      const errorMessage = axios.isAxiosError(err)
+        ? err.response?.data?.message || "Unable to load orders."
+        : err instanceof Error
+          ? err.message
+          : "Unable to load orders.";
+
+      showToast("error", errorMessage);
+    } finally {
+      setOrdersLoaded(true);
+      setOrdersLoading(false);
+    }
+  }, [ordersLoading, showToast, token]);
+
+  useEffect(() => {
+    if (activeTab === "orders" && !ordersLoaded) {
+      fetchOrders();
+    }
+  }, [activeTab, fetchOrders, ordersLoaded]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -494,10 +530,92 @@ const Profile: React.FC = () => {
         name={name}
         value={formData[name] ?? ""}
         onChange={handleChange}
-        disabled={!isEditing || saving}
+        disabled={saving}
         required={["userName", "firstName", "email", "address", "phoneNumber"].includes(name)}
       />
     </label>
+  );
+
+  const renderPersonalOverview = () => (
+    <div className="profile-details-card">
+      <div className="profile-details-card__header">
+        <div>
+          <span>Customer information</span>
+          <h3>{fullName}</h3>
+        </div>
+        <div className="profile-details-card__badge">Verified account</div>
+      </div>
+
+      <dl className="profile-info-grid">
+        <div className="profile-info-item">
+          <FaRegUser aria-hidden="true" />
+          <div>
+            <dt>Name</dt>
+            <dd>{fullName}</dd>
+          </div>
+        </div>
+        <div className="profile-info-item">
+          <FaUserEdit aria-hidden="true" />
+          <div>
+            <dt>User name</dt>
+            <dd>{profile?.userName || "Not added"}</dd>
+          </div>
+        </div>
+        <div className="profile-info-item">
+          <FaEnvelope aria-hidden="true" />
+          <div>
+            <dt>Email</dt>
+            <dd>{profile?.email || "Not added"}</dd>
+          </div>
+        </div>
+        <div className="profile-info-item">
+          <FaPhoneAlt aria-hidden="true" />
+          <div>
+            <dt>Phone</dt>
+            <dd>{profile?.phoneNumber || "Not added"}</dd>
+          </div>
+        </div>
+        <div className="profile-info-item profile-info-item--wide">
+          <FaMapMarkerAlt aria-hidden="true" />
+          <div>
+            <dt>Address</dt>
+            <dd>{profile?.address || "Not added"}</dd>
+          </div>
+        </div>
+      </dl>
+    </div>
+  );
+
+  const renderPersonalForm = () => (
+    <form className="profile-form" onSubmit={handleSubmit}>
+      <fieldset disabled={saving}>
+        <div className="profile-form-grid">
+          {renderField("User name", "userName")}
+          {renderField("First name", "firstName")}
+          {renderField("Last name", "lastName")}
+          {renderField("Email address", "email", "email")}
+          {renderField("Phone number", "phoneNumber", "tel")}
+          <label className="profile-form-field profile-form-field--wide">
+            <span>Address</span>
+            <textarea
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              disabled={saving}
+              required
+              rows={4}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <div className="profile-form-actions">
+        <button type="submit" className="profile-save-btn" disabled={saving}>
+          <FaSave aria-hidden="true" />
+          {saving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
+    </form>
   );
 
   const renderPersonalDetails = () => (
@@ -520,68 +638,7 @@ const Profile: React.FC = () => {
         )}
       </div>
 
-      <div className="profile-info-grid">
-        <div className="profile-info-item">
-          <FaRegUser aria-hidden="true" />
-          <div>
-            <span>Name</span>
-            <strong>{fullName}</strong>
-          </div>
-        </div>
-        <div className="profile-info-item">
-          <FaEnvelope aria-hidden="true" />
-          <div>
-            <span>Email</span>
-            <strong>{profile?.email}</strong>
-          </div>
-        </div>
-        <div className="profile-info-item">
-          <FaPhoneAlt aria-hidden="true" />
-          <div>
-            <span>Phone</span>
-            <strong>{profile?.phoneNumber || "Not added"}</strong>
-          </div>
-        </div>
-        <div className="profile-info-item">
-          <FaMapMarkerAlt aria-hidden="true" />
-          <div>
-            <span>Address</span>
-            <strong>{profile?.address || "Not added"}</strong>
-          </div>
-        </div>
-      </div>
-
-      <form className="profile-form" onSubmit={handleSubmit}>
-        <fieldset disabled={!isEditing || saving}>
-          <div className="profile-form-grid">
-            {renderField("User name", "userName")}
-            {renderField("First name", "firstName")}
-            {renderField("Last name", "lastName")}
-            {renderField("Email address", "email", "email")}
-            {renderField("Phone number", "phoneNumber", "tel")}
-            <label className="profile-form-field profile-form-field--wide">
-              <span>Address</span>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                disabled={!isEditing || saving}
-                required
-                rows={4}
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        {isEditing && (
-          <div className="profile-form-actions">
-            <button type="submit" className="profile-save-btn" disabled={saving}>
-              <FaSave aria-hidden="true" />
-              {saving ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        )}
-      </form>
+      {isEditing ? renderPersonalForm() : renderPersonalOverview()}
     </>
   );
 
@@ -743,6 +800,110 @@ const Profile: React.FC = () => {
     </>
   );
 
+  const formatCurrency = (value?: number) => `₹${(value ?? 0).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  })}`;
+
+  const formatOrderDate = (value?: string) => {
+    if (!value) return "Date unavailable";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  const getOrderItems = (order: CustomerOrder): OrderItemDetails[] => order.items ?? order.orderItems ?? [];
+
+  const renderOrderItem = (item: OrderItemDetails, index: number) => (
+    <div className="profile-order-item" key={`${item.productId}-${item.productVariantId ?? index}`}>
+      {item.imageUrl ? (
+        <img src={item.imageUrl} alt={item.productName} />
+      ) : (
+        <div className="profile-order-item__placeholder">
+          <FaShoppingBag aria-hidden="true" />
+        </div>
+      )}
+      <div>
+        <h4>{item.productName}</h4>
+        <p>
+          Qty {item.quantity}
+          {item.sizeName && item.sizeName !== "Not specified" ? ` • Size ${item.sizeName}` : ""}
+          {item.colorName && item.colorName !== "Not specified" ? ` • ${item.colorName}` : ""}
+        </p>
+      </div>
+      <strong>{formatCurrency(item.price * item.quantity)}</strong>
+    </div>
+  );
+
+  const renderOrderCard = (order: CustomerOrder) => {
+    const items = getOrderItems(order);
+
+    return (
+      <article className="profile-order-card" key={order.orderId || order.paymentId}>
+        <div className="profile-order-card__top">
+          <div>
+            <span>Order #{order.orderId || "Pending"}</span>
+            <h3>{formatOrderDate(order.orderDate)}</h3>
+          </div>
+          <div className="profile-order-status">{order.status || "Paid"}</div>
+        </div>
+
+        <div className="profile-order-card__meta">
+          <div>
+            <span>Total paid</span>
+            <strong>{formatCurrency(order.total)}</strong>
+          </div>
+          <div>
+            <span>Payment reference</span>
+            <strong>{order.paymentId ? `••••${order.paymentId.slice(-8)}` : "Not available"}</strong>
+          </div>
+        </div>
+
+        {order.deliveryAddress && (
+          <p className="profile-order-address">{order.deliveryAddress}</p>
+        )}
+
+        {items.length > 0 ? (
+          <div className="profile-order-items">
+            {items.map(renderOrderItem)}
+          </div>
+        ) : (
+          <div className="profile-order-empty-items">Order items are not available for this purchase.</div>
+        )}
+      </article>
+    );
+  };
+
+  const renderOrders = () => (
+    <>
+      <div className="profile-panel-header">
+        <div>
+          <p>Purchases</p>
+          <h2>My orders</h2>
+        </div>
+        <button type="button" className="profile-action-btn" onClick={() => fetchOrders(true)} disabled={ordersLoading}>
+          <FaShoppingBag aria-hidden="true" />
+          {ordersLoading ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+
+      {ordersLoading ? (
+        <div className="profile-address-empty">Loading orders...</div>
+      ) : orders.length > 0 ? (
+        <div className="profile-order-list">
+          {orders.map(renderOrderCard)}
+        </div>
+      ) : (
+        <div className="profile-address-empty">No purchased orders yet.</div>
+      )}
+    </>
+  );
+
   if (loading) {
     return (
       <main className="profile-page profile-page--loading">
@@ -785,11 +946,17 @@ const Profile: React.FC = () => {
               <FaMapMarkedAlt aria-hidden="true" />
               Manage addresses
             </button>
+            <button type="button" className={activeTab === "orders" ? "is-active" : ""} onClick={() => setActiveTab("orders")}>
+              <FaShoppingBag aria-hidden="true" />
+              Orders
+            </button>
           </nav>
         </aside>
 
         <section className="profile-panel">
-          {activeTab === "personal" ? renderPersonalDetails() : renderManageAddresses()}
+          {activeTab === "personal" && renderPersonalDetails()}
+          {activeTab === "addresses" && renderManageAddresses()}
+          {activeTab === "orders" && renderOrders()}
         </section>
       </section>
     </main>

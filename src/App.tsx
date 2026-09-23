@@ -27,7 +27,7 @@ const App: React.FC = () => {
      
           <Routes>
             {/* Redirect root "/" to "/signin" */}
-            <Route path="/" element={<Navigate to="/signin" replace />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
 
             {/* Public routes */}
             <Route path="/home" element={<Home />} />

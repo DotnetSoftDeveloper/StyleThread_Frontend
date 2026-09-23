@@ -15,6 +15,8 @@ import { RazorpayConstructor } from "../../Types/Interface/Razorpay";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import { clearCartList, removeCart } from "../../Store/EntitySlices";
 import { GenericResponse } from "../../Types/Interface/IGenericResponse";
+import { createCustomerOrder } from "../../Services/orderService";
+import { CreateOrderRequest, OrderItemDetails } from "../../Types/Interface/IOrder";
 
 type ProductVariantWithColor = Product["productVariants"][number] & {
   color?: { colorName?: string };
@@ -23,6 +25,9 @@ type ProductVariantWithColor = Product["productVariants"][number] & {
 interface Props {
   cartItems: CartItem[];
   total: number;
+  subtotal: number;
+  shippingCost: number;
+  tax: number;
   address: string | null;
   onBack: () => void;
 }
@@ -30,6 +35,9 @@ interface Props {
 const OrderReview: React.FC<Props> = ({
   cartItems,
   total,
+  subtotal,
+  shippingCost,
+  tax,
   address,
   onBack
 }) => {
@@ -49,6 +57,16 @@ const OrderReview: React.FC<Props> = ({
   const [paymentNeedsReview, setPaymentNeedsReview] = useState(false);
   const paymentInProgress = useRef(false);
   const checkoutCompleted = useRef(false);
+  const storedToken = localStorage.getItem("auth") ?? localStorage.getItem("token");
+  const authToken = storedToken
+    ? (() => {
+        try {
+          return JSON.parse(storedToken) as string;
+        } catch {
+          return storedToken;
+        }
+      })()
+    : null;
 
   const completePaymentAttempt = () => {
     paymentInProgress.current = false;
@@ -75,12 +93,73 @@ const OrderReview: React.FC<Props> = ({
     }
   };
 
+  const getOrderItems = (): OrderItemDetails[] => cartItems.map((cartItem) => {
+    const product = products.find((p) => p.productId === cartItem.productId);
+    const variant = product?.productVariants.find(
+      (item) => item.productId === cartItem.productId
+    ) as ProductVariantWithColor | undefined;
+    const sizeObj = variant?.productVariantSizes.find(
+      (item) => item.productVariantId === variant.productVariantId
+    );
+    const colorName =
+      variant?.colorName ??
+      variant?.color?.colorName ??
+      dropdowns?.color?.find((color) => color.colorId === variant?.colorId)
+        ?.colorName ??
+      "Not specified";
+    const price = variant?.salePrice ?? variant?.price ?? 0;
+
+    return {
+      productId: cartItem.productId,
+      productVariantId: variant?.productVariantId,
+      productName: product?.name || "Product",
+      productDescription: product?.description,
+      quantity: cartItem.quantity,
+      price,
+      colorName,
+      sizeName: sizeObj?.size.sizeName || "Not specified",
+      imageUrl: variant?.image[0],
+    };
+  });
+
+  const saveVerifiedOrder = async (
+    razorpayOrderId: string,
+    paymentId: string,
+  ) => {
+    const customerId = cartItems[0]?.customerId;
+    if (!customerId || !address) {
+      throw new Error("Missing customer or delivery details for this order.");
+    }
+
+    const orderPayload: CreateOrderRequest = {
+      customerId,
+      orderDate: new Date().toISOString(),
+      total,
+      subtotal,
+      shippingCost,
+      tax,
+      status: "Paid",
+      deliveryAddress: address,
+      razorpayOrderId,
+      paymentId,
+      currency: "INR",
+      items: getOrderItems(),
+    };
+
+    return createCustomerOrder(orderPayload, authToken);
+  };
+
   const handlePayment = async () => {
     if (paymentInProgress.current || paymentNeedsReview) return;
 
     const amount = Math.round(total * 100);
     if (!Number.isSafeInteger(amount) || amount < 1) {
       showToast("error", "The order total is invalid. Please refresh and try again.");
+      return;
+    }
+
+    if (!address) {
+      showToast("error", "Please select a delivery address before payment.");
       return;
     }
 
@@ -123,6 +202,11 @@ const OrderReview: React.FC<Props> = ({
               return;
             }
 
+            const savedOrder = await saveVerifiedOrder(
+              verification.orderId,
+              verification.paymentId,
+            );
+
             const cartCleared = await clearPaidCart();
             if (!cartCleared) {
               setPaymentNeedsReview(true);
@@ -133,11 +217,16 @@ const OrderReview: React.FC<Props> = ({
             showToast("success", "Payment verified successfully.");
             navigate("/thank-you", {
               replace: true,
-              state: { paymentId: verification.paymentId },
+              state: { orderId: savedOrder.orderId, paymentId: verification.paymentId },
             });
           } catch (error) {
             setPaymentNeedsReview(true);
-            showToast("error", getPaymentErrorMessage(error, "Payment verification failed. Please contact support before trying again."));
+            showToast(
+              "error",
+              error instanceof Error
+                ? error.message
+                : getPaymentErrorMessage(error, "Payment was verified, but the order could not be saved. Please contact support before trying again."),
+            );
           } finally {
             completePaymentAttempt();
           }
