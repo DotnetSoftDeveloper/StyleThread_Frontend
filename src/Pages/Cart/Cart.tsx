@@ -122,6 +122,9 @@ const Cart: React.FC = () => {
           <OrderReview
             cartItems={cartItems}
             total={total}
+            subtotal={subtotal}
+            shippingCost={shippingCost}
+            tax={tax}
             address={selectedAddress}
             onBack={() => setStep("address")}
           />
