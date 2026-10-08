@@ -7,7 +7,6 @@ import { AppDispatch, RootState } from "../Store/ConfigureStore";
 import shoppingCart from "../Assests/online-shopping.png";
 import peopleIcon from "../Assests/people.png";
 import stylethread from "../Assests/STW_Logo.png";
-import { useToast } from "../Utils/Helper/ToastNotifications";
 import { CartItem } from "../Types/Interface/ICart";
 import { fetchCart, clearCartList } from "../Store/EntitySlices";
 import { jwtDecode } from "jwt-decode";
@@ -22,10 +21,9 @@ interface CustomerData {
 
 const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { token, role, setToken } = useAuth();
+  const { token, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { showToast } = useToast();
 
   const cartItems = useSelector(
     (state: RootState) => (state.cartItem?.list as CartItem[]) || [],
@@ -53,14 +51,6 @@ const Navbar: React.FC = () => {
       dispatch(clearCartList());
     }
   }, [token, dispatch]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
-    setToken(null);
-    dispatch(clearCartList());
-    navigate("/home");
-    showToast("success", "Logged out successfully.");
-  };
 
   const handleCartClick = (
     event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -173,19 +163,6 @@ const Navbar: React.FC = () => {
             </div>
           )}
 
-          {/* Desktop Auth */}
-          <div className="auth-buttons desktop-auth">
-            {token ? (
-              <button className="nav-link" onClick={handleLogout}>
-                Logout
-              </button>
-            ) : (
-              <Link to="/signin" className="nav-link">
-                Sign In
-              </Link>
-            )}
-          </div>
-
           {/* Mobile Hamburger */}
           <div className="mobile-menu-icon">
             {isMenuOpen ? (
@@ -212,15 +189,6 @@ const Navbar: React.FC = () => {
           {role === "Administrator" && (
             <Link to="/productList" onClick={() => setIsMenuOpen(false)}>
               Product Management
-            </Link>
-          )}
-          {token ? (
-            <button onClick={handleLogout} className="menu-logout">
-              Logout
-            </button>
-          ) : (
-            <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
-              Sign In
             </Link>
           )}
         </div>

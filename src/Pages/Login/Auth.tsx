@@ -1,5 +1,5 @@
 import React, { useRef, useState, ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import "./Auth.css";
 import axios, { AxiosError } from "axios";
 import { useAuth } from "./useAuth";
@@ -32,14 +32,10 @@ interface AuthProps {
 
 export const Auth: React.FC<AuthProps> = ({ mode }) => {
   const ref = useRef<LoadingBarRef | null>(null);
-  const { setToken } = useAuth();
+  const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  
-  
 
-  // const isSignInInitial = mode === "signin";
-  // const [isSignIn, setIsSignIn] = useState<boolean>(isSignInInitial);
   const isSignIn = mode === "signin";
   const [formData, setFormData] = useState<FormData>({
     userName: "",
@@ -51,8 +47,11 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
     phoneNumber: ""
   });
 
-  // const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+
+  if (token) {
+    return <Navigate to="/home" replace />;
+  }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;

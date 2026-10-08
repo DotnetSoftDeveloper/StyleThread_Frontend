@@ -8,9 +8,10 @@ import axios, { Method } from "axios";
 import { GenericResponse } from "../Types/Interface/IGenericResponse";
 
 export interface EntityState<T> {
-  list: T | T[]; // ✅ always an array
+  list: T | T[];
   loading: boolean;
   error: string | null;
+  totalCount: number;
 }
 
 // 🔹 Generic async thunk factory
@@ -54,7 +55,8 @@ export function createEntitySlice<T>(name: string) {
   const initialState: EntityState<T> = {
     list: [],
     loading: false,
-    error: null
+    error: null,
+    totalCount: 0
   };
 
   const slice = createSlice({
@@ -85,15 +87,37 @@ export function createEntitySlice<T>(name: string) {
             action.type.startsWith(name) && action.type.endsWith("/fulfilled"),
           (state, action: PayloadAction<GenericResponse<T | T[]>>) => {
             state.loading = false;
-            const { success, content } = action.payload ?? {};
+            const payload = (action.payload as any) ?? {};
+            const { success, content, totalCount, totalRecords, total } = payload;
             if (success && content) {
-              // ✅ normalize to array
-              state.list = Array.isArray(content)
-                ? (content as Draft<T[]>)
-                : ([content] as Draft<T[]>);
+              if (Array.isArray(content)) {
+                state.list = content as Draft<T[]>;
+              } else if (
+                content &&
+                typeof content === "object" &&
+                "items" in content &&
+                Array.isArray((content as any).items)
+              ) {
+                state.list = (content as any).items as Draft<T[]>;
+              } else {
+                state.list = [content] as Draft<T[]>;
+              }
+            } else if (Array.isArray(payload)) {
+              state.list = payload as Draft<T[]>;
             } else {
               state.list = [];
             }
+            const count =
+              totalCount ??
+              totalRecords ??
+              total ??
+              (content && typeof content === "object"
+                ? (content as any).totalCount ??
+                  (content as any).totalRecords ??
+                  (content as any).total
+                : undefined);
+            const listLen = Array.isArray(state.list) ? state.list.length : 0;
+            state.totalCount = typeof count === "number" ? count : listLen;
           }
         )
         // Rejected

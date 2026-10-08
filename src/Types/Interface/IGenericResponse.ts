@@ -3,4 +3,5 @@ export interface GenericResponse<TResponse> {
   error?: string;
   content?: TResponse;
   success: boolean;
+  totalCount?: number;
 }

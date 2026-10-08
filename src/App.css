@@ -1,5 +1,24 @@
+/* ==========================================================================
+   APP ROOT LAYOUT & STICKY FOOTER WRAPPER
+   ========================================================================== */
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure any page content fills remaining vertical space so footer sits at bottom */
+.App > main,
+.App > .home-page,
+.App > .profile-page,
+.App > .about-container,
+.App > .product-form,
+.App > .cart-container {
+  flex: 1 0 auto;
+}
+
 .card {
-  /* width: 269px; */
   margin: 1rem;
   margin-left: 12px;
   background-color: #fff;
@@ -11,14 +30,14 @@
 .card:hover {
   transform: none;
 }
+
 .product-form {
   width: auto;
   height: auto;
-  /* display: flex; */
-  flex-direction: row; /* Change to row to align items horizontally */
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
-  gap: 20px; /* Increased space between fields */
-  padding: 20px; /* Added padding to the form container */
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 10px;
@@ -26,4 +45,3 @@
   margin: 1rem;
   margin-top: 30px;
 }
-

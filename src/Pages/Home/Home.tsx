@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Loader from "../../Shared/Loader";
 import "./Home.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchDropdowns, fetchProducts } from "../../Store/EntitySlices";
 import FilterBar from "../../Components/FiilterBar/FilterBar";
+import { DEFAULT_CATEGORIES } from "../../Utils/constants";
 import { Product } from "../../Types/Interface/IProduct";
 import { AppDispatch, RootState } from "../../Store/ConfigureStore";
 import ProductCard from "../../Components/ProductCard/ProductCard";
 import { Category, DropdownOptions } from "../../Types/Interface/DropDown";
+import { LoginModal } from "../../Components/LoginModal/LoginModal";
+import { useAuth } from "../Login/useAuth";
+import HomeEmptyState from "../../Components/HomeEmptyState/HomeEmptyState";
 
 const normalizeSearchText = (value: unknown) =>
   String(value ?? "").trim().toLowerCase();
@@ -84,11 +88,26 @@ const Home: React.FC = () => {
     ? dropdownList[0]
     : dropdownList) as DropdownOptions | undefined;
   const loading = useSelector((state: RootState) => state.products.loading);
+  const { token } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
   const searchTerm = useMemo(
     () => new URLSearchParams(location.search).get("search")?.trim() ?? "",
     [location.search],
   );
+
+  // Show login popup when user is logged out and visiting home for the first time
+  useEffect(() => {
+    const hasSeenModal = sessionStorage.getItem("hasSeenLoginModal");
+    if (!token && !hasSeenModal) {
+      const timer = setTimeout(() => {
+        setIsLoginModalOpen(true);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [token]);
   
   useEffect(() => {
     dispatch(fetchProducts(searchTerm ? { searchTerm } : undefined));
@@ -100,6 +119,25 @@ const Home: React.FC = () => {
     }
   }, [dispatch, dropdownOptions]);
 
+  // Combine default categories with dynamic categories if provided by API
+  const availableCategories = useMemo<Category[]>(() => {
+    if (dropdownOptions?.categories && dropdownOptions.categories.length > 0) {
+      const dynamicCategories: Category[] = dropdownOptions.categories.map((cat) => ({
+        label: cat.name,
+        value: cat.categoryId
+      }));
+      return [{ label: "All", value: 0 }, ...dynamicCategories];
+    }
+    return DEFAULT_CATEGORIES;
+  }, [dropdownOptions]);
+
+  // Get active category's friendly label
+  const selectedCategoryName = useMemo(() => {
+    if (selectedCategoryId === null || selectedCategoryId === 0) return "All";
+    const found = availableCategories.find((c) => c.value === selectedCategoryId);
+    return found ? found.label : "";
+  }, [availableCategories, selectedCategoryId]);
+
   const filteredProducts = useMemo(() => {
     const searchedProducts = searchTerm
       ? productData.filter((product) =>
@@ -107,76 +145,128 @@ const Home: React.FC = () => {
         )
       : productData;
 
-    return selectedCategoryId === null
+    return selectedCategoryId === null || selectedCategoryId === 0
       ? searchedProducts
       : searchedProducts.filter((product) => product.categoryId === selectedCategoryId);
   }, [dropdownOptions, productData, searchTerm, selectedCategoryId]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     navigate({ pathname: "/home" });
-  };
+  }, [navigate]);
 
   const handleCardClick = (product: Product) => {
     navigate(`/product/${product.productId}`);
   };
 
-  useEffect(() => {
-    const handlePopState = () => {
-      // setShowDetailModal(false);
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
-
   const handleCategorySelect = (category: Category) => {
-    if (category.label.toLowerCase() === "all") {
+    if (category.value === 0 || category.label.toLowerCase() === "all") {
       setSelectedCategoryId(null);
     } else {
       setSelectedCategoryId(category.value);
     }
   };
 
+  const handleResetAll = useCallback(() => {
+    setSelectedCategoryId(null);
+    if (searchTerm) {
+      navigate({ pathname: "/home" });
+    }
+  }, [navigate, searchTerm]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await dispatch(fetchProducts(searchTerm ? { searchTerm } : undefined));
+    } finally {
+      setTimeout(() => setRefreshing(false), 500);
+    }
+  }, [dispatch, searchTerm]);
+
+  const handleCloseLoginModal = () => {
+    sessionStorage.setItem("hasSeenLoginModal", "true");
+    setIsLoginModalOpen(false);
+  };
+
+  const handleLoginSuccess = () => {
+    sessionStorage.setItem("hasSeenLoginModal", "true");
+    setIsLoginModalOpen(false);
+  };
+
   return (
     <main className="home-page">
-      <section className="home-filter-panel">
-        <FilterBar onCategorySelect={handleCategorySelect} />
+      {/* Category Navigation Panel */}
+      <section className="home-filter-panel" aria-label="Collections and Categories">
+        <FilterBar
+          onCategorySelect={handleCategorySelect}
+          selectedCategoryId={selectedCategoryId}
+          categories={availableCategories}
+        />
       </section>
-      <section className="home-products-panel">
+
+      {/* Main Products Display Panel */}
+      <section className="home-products-panel" aria-label="Product Listings">
+        {/* Active Search Summary Bar */}
         {searchTerm && !loading && (
           <div className="search-results-summary" role="status">
-            <span>
-              {filteredProducts.length} result{filteredProducts.length === 1 ? "" : "s"} for "{searchTerm}"
-            </span>
-            <button type="button" onClick={handleClearSearch}>
-              Clear
+            <div className="search-results-summary__info">
+              <span className="search-results-summary__badge">Search Filter</span>
+              <span className="search-results-summary__text">
+                {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} found for "<strong>{searchTerm}</strong>"
+                {selectedCategoryId && selectedCategoryName && (
+                  <> in <em>{selectedCategoryName}</em></>
+                )}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="search-results-summary__clear-btn"
+              onClick={handleClearSearch}
+              aria-label="Clear search filter"
+            >
+              Clear Search
             </button>
           </div>
         )}
+
+        {/* Loading State */}
         {loading ? (
-          <div className="center-loader">
+          <div className="center-loader" aria-label="Loading products">
             <Loader />
           </div>
-        ) : (
+        ) : filteredProducts.length > 0 ? (
+          /* Populated Product Grid */
           <div className="rowDesign">
-            {filteredProducts.length > 0 ? filteredProducts.map((product, index) => (
+            {filteredProducts.map((product, index) => (
               <ProductCard
                 key={product.productId ?? index}
                 product={product}
                 colorOptions={dropdownOptions?.color ?? []}
                 onCardClick={handleCardClick}
               />
-            )) : (
-              <p className="search-empty-state">
-                {searchTerm ? `No products found for "${searchTerm}".` : "No products are available right now."}
-              </p>
-            )}
+            ))}
           </div>
+        ) : (
+          /* Professional Animated Empty State */
+          <HomeEmptyState
+            searchTerm={searchTerm}
+            selectedCategoryId={selectedCategoryId}
+            selectedCategoryName={selectedCategoryName}
+            categories={availableCategories}
+            onSelectCategory={handleCategorySelect}
+            onClearSearch={handleClearSearch}
+            onResetAll={handleResetAll}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+          />
         )}
       </section>
+
+      {/* Login Popup for first-time / logged-out users */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleCloseLoginModal}
+        onSuccess={handleLoginSuccess}
+      />
     </main>
   );
 };

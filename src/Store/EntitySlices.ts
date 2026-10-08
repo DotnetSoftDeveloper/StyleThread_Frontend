@@ -8,7 +8,7 @@ import { CartItem } from "../Types/Interface/ICart";
 const productSlice = createEntitySlice<Product>("product");
 export const fetchProducts = createEntityThunk<Product>(
   "product",
-  "/api/products"
+  "/api/Products/GetProduct"
 );
 
 // --- Dropdowns ---

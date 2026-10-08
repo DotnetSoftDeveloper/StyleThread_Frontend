@@ -2,6 +2,7 @@ import "./App.css";
 import About from "./Pages/About/About";
 import {  Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
 import NoContentFound from "./NoContentFound";
 import ProductList from "./Components/ProductList/ProductList";
 import ProductDetail from "./Pages/ProductDetail/ProductDetail";
@@ -26,17 +27,29 @@ const App: React.FC = () => {
         <Navbar />
      
           <Routes>
-            {/* Redirect root "/" to "/signin" */}
+            {/* Redirect root "/" to "/home" */}
             <Route path="/" element={<Navigate to="/home" replace />} />
 
             {/* Public routes */}
             <Route path="/home" element={<Home />} />
-            <Route path="/signin" element={<Auth mode="signin" />} />
-            <Route path="/signup" element={<Auth mode="signup" />} />
+            <Route
+              path="/signin"
+              element={<PublicRoute element={<Auth mode="signin" />} />}
+            />
+            <Route
+              path="/signup"
+              element={<PublicRoute element={<Auth mode="signup" />} />}
+            />
             <Route path="/confirm" element={<Confirm />} />
             <Route path="/about" element={<About />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/forgot-password"
+              element={<PublicRoute element={<ForgotPassword />} />}
+            />
+            <Route
+              path="/reset-password"
+              element={<PublicRoute element={<ResetPassword />} />}
+            />
             <Route path="/thank-you" element={<ThankYou />} />
             {/* Protected routes */}
             <Route
@@ -69,7 +82,7 @@ const App: React.FC = () => {
             <Route
               path="/profile"
               element={
-                <ProtectedRoute element={Profile} allowedRoles={["Visitor"]} />
+                <ProtectedRoute element={Profile} allowedRoles={["Visitor", "Administrator"]} />
               }
             />
             <Route

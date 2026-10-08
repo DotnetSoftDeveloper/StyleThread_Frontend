@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Select, { MultiValue } from "react-select";
 import { useSelector } from "react-redux";
-import { Button } from "../Atoms/Button";
+import { FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 import type {
-  ProductVariant,
-  ProductVariantSize,
+  ProductVariant as ProductVariantType,
+  ProductVariantSize
 } from "../../Types/Interface/IProduct";
 import { RootState } from "../../Store/ConfigureStore";
-// import { DropdownOptions } from "../../Types/Interface/DropDown";
 
 interface DropdownOption {
   value: number;
@@ -15,25 +14,20 @@ interface DropdownOption {
 }
 
 interface ProductVariantProps {
-  variantData: ProductVariant;
-  updateVariant: (variant: ProductVariant) => void;
-}
-
-interface SelectOption {
-  [key: string]: string | number;
+  variantData: ProductVariantType;
+  updateVariant: (variant: ProductVariantType) => void;
 }
 
 const ProductVariant: React.FC<ProductVariantProps> = ({
   variantData,
   updateVariant
 }) => {
-  // const dropdowns = useSelector((state: RootState) => state.addProducts?.list ) as DropdownOptions;
   const dropdowns = useSelector((state: RootState) => {
-  const list = state.addProducts.list;
+    const list = state.addProducts.list;
+    return Array.isArray(list) ? list[0] : list;
+  });
 
-  return Array.isArray(list) ? list[0] : list;
-});
-  const [localVariant, setLocalVariant] = useState<ProductVariant>({
+  const [localVariant, setLocalVariant] = useState<ProductVariantType>({
     ...variantData,
     price: variantData?.price ?? "",
     salePrice: variantData?.salePrice ?? "",
@@ -41,7 +35,7 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
     discount: variantData?.discount ?? 0,
     colorId: variantData?.colorId ?? "",
     productVariantSizes: variantData?.productVariantSizes ?? [],
-    image: variantData?.image ?? [],
+    image: variantData?.image ?? []
   });
 
   useEffect(() => {
@@ -55,10 +49,10 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-	    const { name, value } = event.target;
-		const updatedVariant = { ...localVariant, [name]: value };
-		setLocalVariant(updatedVariant);
-		updateVariant(updatedVariant);
+    const { name, value } = event.target;
+    const updatedVariant = { ...localVariant, [name]: value };
+    setLocalVariant(updatedVariant);
+    updateVariant(updatedVariant);
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +61,7 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
       files.map((file) => {
         return new Promise<string>((resolve) => {
           const reader = new FileReader();
-          reader.onloadend = () => {  
+          reader.onloadend = () => {
             const result = reader.result as string;
             resolve(result?.split(",")[1] || "");
           };
@@ -77,7 +71,7 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
     ).then((updatedImages: string[]) => {
       const updatedVariant = {
         ...localVariant,
-       image: [...localVariant.image, ...updatedImages]
+        image: [...localVariant.image, ...updatedImages]
       };
       setLocalVariant(updatedVariant);
       updateVariant(updatedVariant);
@@ -88,10 +82,8 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
     index: number,
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
-    // Prevent form submission or other events from being triggered
     event.preventDefault();
     event.stopPropagation();
-
     const updatedImages = localVariant.image.filter((_, i) => i !== index);
     setLocalVariant((prev) => ({ ...prev, image: updatedImages }));
     updateVariant({ ...localVariant, image: updatedImages });
@@ -99,7 +91,7 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
 
   const handleSelectChange = (selectedSizes: MultiValue<DropdownOption>) => {
     const updatedVariantSizes = selectedSizes.map((size) => ({
-      productVariantId: localVariant.productVariantId || 0, // Ensure this is correctly populated
+      productVariantId: localVariant.productVariantId || 0,
       sizeId: size.value,
       size: {
         sizeId: size.value,
@@ -116,148 +108,159 @@ const ProductVariant: React.FC<ProductVariantProps> = ({
     updateVariant(updatedVariant);
   };
 
-  const renderSelect = (label:string, name:string, options:SelectOption[], optionId:string, optionName:string) => (
-    <div className="inputContainer">
-      <label className="inputLabel">{label}:</label>
-      <select
-        className="customDrodown"
-        name={name}
-        value={formatValue(localVariant[name as keyof ProductVariant])}
-        onChange={handleChange}
-        required
-      >
-        <option value="">Select {label}</option>
-        {options.map((option) => (
-          <option key={option[optionId]} value={option[optionId]}>
-            {option[optionName]}
-          </option>
-        ))}
-      </select>
-      <div className="inputUnderline"></div>
-    </div>
-  );
-  
-  const formatValue = (
-    value:
-      | string
-      | number
-      | ProductVariantSize[]
-      | number[]
-      | string[]
-      | undefined
-  ): string => {
-    if (Array.isArray(value)) {
-      return value
-        .map((item) =>
-          typeof item === "object" ? JSON.stringify(item) : String(item)
-        )
-        .join(", ");
-    }
-    return value?.toString() ?? "";
+  const formatValue = (value: unknown): string => {
+    if (value === undefined || value === null) return "";
+    if (Array.isArray(value)) return value.join(", ");
+    return String(value);
   };
 
   return (
-    <>
-      {["price", "salePrice", "inventory"].map((field) => (
-        <div key={field} className="inputContainer">
-          <label className="inputLabel">{field}:</label>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", width: "100%" }}>
+      {/* ── Pricing & Inventory Row ── */}
+      <div className="ap-form-row">
+        <div className="inputContainer">
+          <label className="inputLabel">Price (₹)</label>
           <input
             className="customInput"
-            placeholder={`Enter ${field}`}
+            placeholder="e.g. 1499"
             type="number"
-            name={field}
-            value={formatValue(localVariant[field as keyof ProductVariant])}
+            name="price"
+            value={formatValue(localVariant.price)}
             onChange={handleChange}
             required
           />
-          <div className="inputUnderline"></div>
         </div>
-      ))}
-      {renderSelect(
-        "Color",
-        "colorId",
-        dropdowns?.color || [],
-        "colorId",
-        "colorName"
-      )}
-      <div className="inputContainer">
-        <label className="inputLabel">Size:</label>
-        <Select
-          className="customDrodown"
-          isMulti
-          value={dropdowns?.sizes
-            ?.filter((size) =>
-              localVariant.productVariantSizes?.some(
-                (s) => s.sizeId === size.sizeId
+
+        <div className="inputContainer">
+          <label className="inputLabel">Sale Price (₹)</label>
+          <input
+            className="customInput"
+            placeholder="e.g. 1299"
+            type="number"
+            name="salePrice"
+            value={formatValue(localVariant.salePrice)}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="inputContainer">
+          <label className="inputLabel">Inventory / Stock</label>
+          <input
+            className="customInput"
+            placeholder="e.g. 50"
+            type="number"
+            name="inventory"
+            value={formatValue(localVariant.inventory)}
+            onChange={handleChange}
+            required
+          />
+        </div>
+      </div>
+
+      {/* ── Color & Size Row ── */}
+      <div className="ap-form-row">
+        <div className="inputContainer">
+          <label className="inputLabel">Color</label>
+          <select
+            className="customDrodown"
+            name="colorId"
+            value={formatValue(localVariant.colorId)}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Color</option>
+            {dropdowns?.color?.map((col) => (
+              <option key={col.colorId} value={col.colorId}>
+                {col.colorName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="inputContainer">
+          <label className="inputLabel">Available Sizes</label>
+          <Select
+            isMulti
+            value={dropdowns?.sizes
+              ?.filter((size) =>
+                localVariant.productVariantSizes?.some(
+                  (s) => s.sizeId === size.sizeId
+                )
               )
-            )
-            .map((size) => ({
+              .map((size) => ({
+                value: size.sizeId,
+                label: size.sizeName
+              }))}
+            options={dropdowns?.sizes?.map((size) => ({
               value: size.sizeId,
               label: size.sizeName
             }))}
-          options={dropdowns?.sizes?.map((size) => ({
-            value: size.sizeId,
-            label: size.sizeName
-          }))}
-          onChange={handleSelectChange}
-          styles={{
-            control: (provided) => ({ ...provided, minHeight: "40px" }),
-            menu: (provided) => ({
-              ...provided,
-              maxHeight: "150px",
-              overflowY: "auto"
-            })
-          }}
-        />
-
-        <div className="inputUnderline"></div>
-      </div>
-      <div className="inputContainer">
-        <label className="inputLabel">Image:</label>
-        <input
-          className="customInput"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageChange}
-          required={!localVariant.image.length}
-        />
-        <div className="inputUnderline"></div>
-      </div>
-      {localVariant.image.length > 0 && (
-        <div className="image-preview">
-          {localVariant.image.map((imgSrc, index) => {
-            // Only render valid base64 images
-            if (!imgSrc) return null; // Skip invalid or empty images
-            const imageUrl = imgSrc.startsWith("http")
-              ? imgSrc
-              : `data:image/jpeg;base64,${imgSrc}`;
-            return (
-              <div
-                key={index}
-                style={{
-                  position: "relative",
-                  display: "inline-block",
-                  margin: "10px"
-                }}
-              >
-                <img
-                  src={imageUrl}
-                  alt={`Preview ${index + 1}`}
-                  style={{ maxWidth: "100%", maxHeight: "200px" }}
-                />
-                <Button
-                  className="close-button"
-                  label="&times;"
-                  onClick={(e) => handleRemoveImage(index, e)}
-                />
-              </div>
-            );
-          })}
+            onChange={handleSelectChange}
+            placeholder="Select Sizes…"
+            styles={{
+              control: (base) => ({
+                ...base,
+                minHeight: "42px",
+                borderColor: "#d1d5db",
+                borderRadius: "8px",
+                fontSize: "0.875rem",
+                boxShadow: "none",
+                "&:hover": { borderColor: "#9ca3af" }
+              }),
+              menu: (base) => ({
+                ...base,
+                zIndex: 20,
+                maxHeight: "160px"
+              })
+            }}
+          />
         </div>
-      )}
-    </>
+      </div>
+
+      {/* ── Image Upload Section ── */}
+      <div className="inputContainer">
+        <label className="inputLabel">Variant Images</label>
+        <div className="ap-dropzone">
+          <FaCloudUploadAlt className="ap-dropzone-icon" />
+          <span className="ap-dropzone-text">Click or drag images to upload</span>
+          <span className="ap-dropzone-subtext">PNG, JPG, WEBP up to 5MB</span>
+          <input
+            className="ap-dropzone-input"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageChange}
+            required={!localVariant.image.length}
+          />
+        </div>
+
+        {/* Thumbnail Previews */}
+        {localVariant.image.filter(Boolean).length > 0 && (
+          <div className="ap-image-grid">
+            {localVariant.image.map((imgSrc, idx) => {
+              if (!imgSrc) return null;
+              const imageUrl = imgSrc.startsWith("http")
+                ? imgSrc
+                : `data:image/jpeg;base64,${imgSrc}`;
+              return (
+                <div key={idx} className="ap-image-card">
+                  <img src={imageUrl} alt={`Variant preview ${idx + 1}`} />
+                  <button
+                    className="ap-image-remove-btn"
+                    onClick={(e) => handleRemoveImage(idx, e)}
+                    title="Remove image"
+                    type="button"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
-}
+};
 
 export default ProductVariant;
