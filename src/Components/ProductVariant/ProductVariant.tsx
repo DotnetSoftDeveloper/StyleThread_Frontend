@@ -3,8 +3,7 @@ import Select, { MultiValue } from "react-select";
 import { useSelector } from "react-redux";
 import { FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 import type {
-  ProductVariant as ProductVariantType,
-  ProductVariantSize
+  ProductVariant as ProductVariantType
 } from "../../Types/Interface/IProduct";
 import { RootState } from "../../Store/ConfigureStore";
 

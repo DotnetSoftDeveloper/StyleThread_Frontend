@@ -7,6 +7,8 @@ import {
 import axios, { Method } from "axios";
 import { GenericResponse } from "../Types/Interface/IGenericResponse";
 
+import { getStoredToken } from "../Utils/Helper/authHelpers";
+
 export interface EntityState<T> {
   list: T | T[];
   loading: boolean;
@@ -24,16 +26,17 @@ export const createEntityThunk = <T>(
     `${name}/${method.toLowerCase()}`,
     async (payload, { rejectWithValue }) => {
       try {
-        // ✅ standardize on 'auth', fallback to 'token' if needed
-        const token =
-          localStorage.getItem("auth") ?? localStorage.getItem("token") ?? "";
+        const token = getStoredToken() ?? "";
+        const tenantSlug =
+          localStorage.getItem("stylethread_tenant_slug") || "default";
 
         const response = await axios.request<GenericResponse<T | T[]>>({
           baseURL: "https://localhost:44314",
           url,
           method,
           headers: {
-            Authorization: token ? `Bearer ${token}` : ""
+            Authorization: token ? `Bearer ${token}` : "",
+            "X-Tenant-Slug": tenantSlug
           },
           ...(method === "GET" || method === "DELETE"
             ? { params: payload } // send query params for GET/DELETE
@@ -81,10 +84,10 @@ export function createEntitySlice<T>(name: string) {
             state.error = null;
           }
         )
-        // Fulfilled
+        // Fulfilled (GET only replaces list)
         .addMatcher(
           (action) =>
-            action.type.startsWith(name) && action.type.endsWith("/fulfilled"),
+            action.type === `${name}/get/fulfilled`,
           (state, action: PayloadAction<GenericResponse<T | T[]>>) => {
             state.loading = false;
             const payload = (action.payload as any) ?? {};
@@ -104,7 +107,7 @@ export function createEntitySlice<T>(name: string) {
               }
             } else if (Array.isArray(payload)) {
               state.list = payload as Draft<T[]>;
-            } else {
+            } else if (success && content === null) {
               state.list = [];
             }
             const count =
@@ -118,6 +121,16 @@ export function createEntitySlice<T>(name: string) {
                 : undefined);
             const listLen = Array.isArray(state.list) ? state.list.length : 0;
             state.totalCount = typeof count === "number" ? count : listLen;
+          }
+        )
+        // Fulfilled (non-GET actions like post, put, delete only reset loading)
+        .addMatcher(
+          (action) =>
+            action.type.startsWith(name) &&
+            action.type.endsWith("/fulfilled") &&
+            action.type !== `${name}/get/fulfilled`,
+          (state) => {
+            state.loading = false;
           }
         )
         // Rejected

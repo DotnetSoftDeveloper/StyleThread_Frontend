@@ -35,9 +35,10 @@ import Loader from "../../Shared/Loader";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import { getCustomerOrders } from "../../Services/orderService";
 import { CustomerOrder, OrderItemDetails } from "../../Types/Interface/IOrder";
-import { useAuth } from "../Login/useAuth";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../Store/ConfigureStore";
+import { useAuth } from "../Login/useAuth";
+import { getStoredToken, clearStoredAuth } from "../../Utils/Helper/authHelpers";
 import { clearCartList } from "../../Store/EntitySlices";
 
 interface CustomerProfile {
@@ -144,17 +145,6 @@ const indianStates = [
   "West Bengal"
 ];
 
-const getStoredToken = () => {
-  const token = localStorage.getItem("auth") ?? localStorage.getItem("token");
-  if (!token) return null;
-
-  try {
-    return JSON.parse(token) as string;
-  } catch {
-    return token;
-  }
-};
-
 const getInitials = (profile: CustomerProfile | null) => {
   if (!profile) return "ST";
   const first = profile.firstName?.charAt(0) ?? "";
@@ -165,7 +155,7 @@ const getInitials = (profile: CustomerProfile | null) => {
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { setToken } = useAuth();
+  const { role, setToken } = useAuth();
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -196,8 +186,7 @@ const Profile: React.FC = () => {
 
   // Handle Logout
   const handleLogout = () => {
-    localStorage.removeItem("auth");
-    localStorage.removeItem("token");
+    clearStoredAuth();
     sessionStorage.removeItem("hasSeenLoginModal");
     setToken(null);
     dispatch(clearCartList());
@@ -1558,7 +1547,15 @@ const Profile: React.FC = () => {
 
             <div className="profile-member-badge">
               <FaShieldAlt aria-hidden="true" />
-              <span>Verified Customer</span>
+              <span>
+                {role === "SuperAdministrator"
+                  ? "Platform Super Admin"
+                  : role === "Administrator"
+                  ? "Store Administrator"
+                  : role === "Seller"
+                  ? "Store Owner / Seller"
+                  : "Verified Customer"}
+              </span>
             </div>
 
             {/* Quick Metrics */}
@@ -1614,6 +1611,34 @@ const Profile: React.FC = () => {
                 <span className="profile-nav-count">{orders.length}</span>
               )}
             </button>
+
+            {(role === "Administrator" || role === "SuperAdministrator" || role === "Seller") && (
+              <>
+                <div className="profile-nav-separator" />
+                <button
+                  type="button"
+                  className="profile-nav-item"
+                  onClick={() => navigate("/productList")}
+                >
+                  <div className="profile-nav-item__left">
+                    <FaShoppingBag aria-hidden="true" />
+                    <span>Manage Products</span>
+                  </div>
+                </button>
+                {(role === "Administrator" || role === "SuperAdministrator") && (
+                  <button
+                    type="button"
+                    className="profile-nav-item"
+                    onClick={() => navigate("/store-settings")}
+                  >
+                    <div className="profile-nav-item__left">
+                      <FaShieldAlt aria-hidden="true" />
+                      <span>Store Settings</span>
+                    </div>
+                  </button>
+                )}
+              </>
+            )}
 
             <div className="profile-nav-separator" />
 

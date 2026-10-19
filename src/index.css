@@ -1,3 +1,9 @@
+:root {
+  --tenant-primary: #111827;
+  --tenant-accent: #1d4ed8;
+  --tenant-bg: #f8fafc;
+}
+
 html,
 body,
 #root {
@@ -18,8 +24,9 @@ body {
   font-family: 'Montserrat', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8fafc;
+  background-color: var(--tenant-bg, #f8fafc);
   color: #1e293b;
+  transition: background-color 0.3s ease;
 }
 
 code {

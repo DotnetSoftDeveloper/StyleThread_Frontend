@@ -11,6 +11,7 @@ import { CartItem } from "../Types/Interface/ICart";
 import { fetchCart, clearCartList } from "../Store/EntitySlices";
 import { jwtDecode } from "jwt-decode";
 import { FaSearch, FaBars, FaTimes } from "react-icons/fa"; // 🔍 Menu icons
+import { useTenant } from "../Context/TenantContext";
 
 interface CustomerData {
   iss: string;
@@ -22,6 +23,7 @@ interface CustomerData {
 const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { token, role } = useAuth();
+  const { tenant, settings } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -83,19 +85,28 @@ const Navbar: React.FC = () => {
         <div className="navbar-left">
           <div className="ST-Logo">
             <Link to="/home" className="nav-link">
-              <img src={stylethread} alt="Style Thread Logo" />
+              <img
+                src={settings?.logoUrl || stylethread}
+                alt={`${tenant?.storeName || "Style Thread"} Logo`}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = stylethread;
+                }}
+              />
             </Link>
           </div>
           <Link to="/home" className="nav-link">
-            <div className="logo-text">Style Thread</div>
+            <div className="logo-text">{tenant?.storeName || "Style Thread"}</div>
           </Link>
           <div className="desktop-nav">
             <Link to="/home">Home</Link>
             <Link to="/about">About</Link>
             <Link to="/contact">Contact</Link>
 
-            {role === "Administrator" && (
-              <Link to="/productList">Product Management</Link>
+            {(role === "Administrator" || role === "SuperAdministrator" || role === "Seller") && (
+              <Link to="/productList">Products</Link>
+            )}
+            {(role === "Administrator" || role === "SuperAdministrator") && (
+              <Link to="/store-settings">Store Settings</Link>
             )}
           </div>
         </div>
@@ -118,7 +129,6 @@ const Navbar: React.FC = () => {
             </button>
           </form>
 
-          {/* Mobile Search */}
           {/* Mobile Search */}
           <div className="mobile-search">
             {!showMobileSearch ? (
@@ -155,12 +165,28 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {role === "Visitor" && (
+          {token ? (
             <div className="profile-icon">
-              <Link to="/profile">
+              <Link to="/profile" title="My Profile">
                 <img src={peopleIcon} alt="Profile Icon" />
               </Link>
             </div>
+          ) : (
+            <Link
+              to="/signin"
+              style={{
+                textDecoration: "none",
+                color: "#1f2937",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                padding: "6px 14px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                backgroundColor: "#fff"
+              }}
+            >
+              Sign In
+            </Link>
           )}
 
           {/* Mobile Hamburger */}
@@ -186,9 +212,23 @@ const Navbar: React.FC = () => {
           <Link to="/contact" onClick={() => setIsMenuOpen(false)}>
             Contact
           </Link>
-          {role === "Administrator" && (
+          {(role === "Administrator" || role === "SuperAdministrator" || role === "Seller") && (
             <Link to="/productList" onClick={() => setIsMenuOpen(false)}>
-              Product Management
+              Products
+            </Link>
+          )}
+          {(role === "Administrator" || role === "SuperAdministrator") && (
+            <Link to="/store-settings" onClick={() => setIsMenuOpen(false)}>
+              Store Settings
+            </Link>
+          )}
+          {token ? (
+            <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+              My Profile
+            </Link>
+          ) : (
+            <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
+              Sign In
             </Link>
           )}
         </div>

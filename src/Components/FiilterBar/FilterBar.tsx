@@ -22,7 +22,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
     <div className="filter-bar-wrapper">
       <nav className="filter-bar" aria-label="Product categories">
         <ul className="filter-options" role="tablist">
-          {categories.map((category, index) => {
+          {categories.map((category) => {
             const isSelected =
               (category.value === 0 &&
                 (selectedCategoryId === null || selectedCategoryId === 0)) ||

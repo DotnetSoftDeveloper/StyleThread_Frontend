@@ -16,9 +16,10 @@ import { GenericResponse } from "../../Types/Interface/IGenericResponse";
 import { CartItem } from "../../Types/Interface/ICart";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import { getCartCount } from "../../Utils/Helper/cartHelpers";
-import NoImageFound from "./../../Assests/NoImageFound.jpg";
 import { Product } from "../../Types/Interface/IProduct";
 import { useNavigate } from "react-router-dom";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
+import NoImageFound from "./../../Assests/NoImageFound.jpg";
 
 interface CustomerData {
   iss: string;
@@ -113,9 +114,10 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
 
   /** 🔹 Decode token & fetch cart */
   useEffect(() => {
-    const token = localStorage.getItem("auth");
+    const token = getStoredToken();
     if (!token) {
       setErrorMessage("Please log in to view your cart.");
+      setLoading(false);
       return;
     }
 
@@ -179,6 +181,10 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                   products.productId === item.productId ? products : undefined;
               }
 
+              const variant = product?.productVariants?.[0];
+              const itemPrice = variant?.salePrice ?? variant?.price ?? 100;
+              const itemImage = variant?.image?.[0] || NoImageFound;
+
               return (
                 <div
                   className="cart-item"
@@ -190,22 +196,13 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                     onClick={() => navigate(`/product/${item.productId}`)}
                   >
                     <img
-                      src={
-                        product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.image[0] || NoImageFound
-                      }
+                      src={itemImage}
                       alt={product?.name || `Product #${item.productId}`}
                       className="cart-item-image"
                     />
                     <div className="cart-item-details">
                       <h4>{product?.name || `Product #${item.productId}`}</h4>
-                      <p>
-                        ₹
-                        {product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.price || 100}
-                      </p>
+                      <p>₹{itemPrice}</p>
                     </div>
                   </div>
 
@@ -260,12 +257,7 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                   <div className="cart-item-total">
                     <span>Item total</span>
                     <strong>
-                      ₹
-                      {(
-                        (product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.price || 100) * item.quantity
-                      ).toFixed(2)}
+                      ₹{(itemPrice * item.quantity).toFixed(2)}
                     </strong>
                   </div>
                 </div>

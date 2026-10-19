@@ -17,6 +17,7 @@ import { clearCartList, removeCart } from "../../Store/EntitySlices";
 import { GenericResponse } from "../../Types/Interface/IGenericResponse";
 import { createCustomerOrder } from "../../Services/orderService";
 import { CreateOrderRequest, OrderItemDetails } from "../../Types/Interface/IOrder";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
 
 type ProductVariantWithColor = Product["productVariants"][number] & {
   color?: { colorName?: string };
@@ -57,16 +58,7 @@ const OrderReview: React.FC<Props> = ({
   const [paymentNeedsReview, setPaymentNeedsReview] = useState(false);
   const paymentInProgress = useRef(false);
   const checkoutCompleted = useRef(false);
-  const storedToken = localStorage.getItem("auth") ?? localStorage.getItem("token");
-  const authToken = storedToken
-    ? (() => {
-        try {
-          return JSON.parse(storedToken) as string;
-        } catch {
-          return storedToken;
-        }
-      })()
-    : null;
+  const authToken = getStoredToken();
 
   const completePaymentAttempt = () => {
     paymentInProgress.current = false;

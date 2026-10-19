@@ -23,6 +23,7 @@ import {
   setCartList
 } from "../../Store/EntitySlices";
 import { getCartCount } from "../../Utils/Helper/cartHelpers";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
 
 interface CustomerData {
   iss: string;
@@ -88,7 +89,7 @@ const ProductDetail: React.FC = () => {
 
   /** 🔹 Hydrate cart */
   useEffect(() => {
-    const token = localStorage.getItem("auth");
+    const token = getStoredToken();
     if (!token) return;
 
     try {
@@ -170,7 +171,6 @@ const ProductDetail: React.FC = () => {
       ).unwrap()) as GenericResponse<CartItem | CartItem[]>;
 
       if (response.success) {
-        await dispatch(fetchCart({ customerId }));
         const refreshedCart = (await dispatch(
           fetchCart({ customerId })
         ).unwrap()) as GenericResponse<CartItem[]>;

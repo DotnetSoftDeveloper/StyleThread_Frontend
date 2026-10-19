@@ -5,8 +5,8 @@ import axios, { AxiosError } from "axios";
 import { useAuth } from "./useAuth";
 import LoadingBar, { LoadingBarRef } from "react-top-loading-bar"; // Import LoadingBarRef
 import "react-toastify/dist/ReactToastify.css";
-// import { ToastContainer } from "react-toastify";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
+import { setStoredAuth } from "../../Utils/Helper/authHelpers";
 
 // Define types for form data
 interface FormData {
@@ -91,8 +91,7 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
       } else {
         const token: string | undefined = response.data.content;
         if (token) {
-          localStorage.setItem("token", token);
-          localStorage.setItem("auth", JSON.stringify(response.data.content));
+          setStoredAuth(token);
           setToken(token);
 
           showToast(

@@ -16,10 +16,10 @@ import React from "react";
 import Confirm from "./Pages/Login/Confirm";
 import { Auth } from "./Pages/Login/Auth";
 
-import "react-toastify/dist/ReactToastify.css";
 import ForgotPassword from "./Pages/Login/ForgotPassword";
 import ResetPassword from "./Pages/Login/ResetPassword";
 import ThankYou from "./Pages/ThankYou/ThankYou";
+import StoreSettings from "./Pages/Admin/StoreSettings";
 
 const App: React.FC = () => {
   return (
@@ -53,11 +53,20 @@ const App: React.FC = () => {
             <Route path="/thank-you" element={<ThankYou />} />
             {/* Protected routes */}
             <Route
+              path="/store-settings"
+              element={
+                <ProtectedRoute
+                  element={StoreSettings}
+                  allowedRoles={["SuperAdministrator", "Administrator"]}
+                />
+              }
+            />
+            <Route
               path="/productList"
               element={
                 <ProtectedRoute
                   element={ProductList}
-                  allowedRoles={["Administrator"]}
+                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
                 />
               }
             />
@@ -66,7 +75,7 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute
                   element={AddProduct}
-                  allowedRoles={["Administrator"]}
+                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
                 />
               }
             />
@@ -75,14 +84,17 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute
                   element={(props) => <AddProduct {...props} />}
-                  allowedRoles={["Administrator"]}
+                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
                 />
               }
             />
             <Route
               path="/profile"
               element={
-                <ProtectedRoute element={Profile} allowedRoles={["Visitor", "Administrator"]} />
+                <ProtectedRoute
+                  element={Profile}
+                  allowedRoles={["SuperAdministrator", "Administrator", "Seller", "Visitor"]}
+                />
               }
             />
             <Route
@@ -99,7 +111,7 @@ const App: React.FC = () => {
                 <div className="product-form">
                   <ProtectedRoute
                     element={Cart}
-                    allowedRoles={["Administrator", "Visitor"]}
+                    allowedRoles={["SuperAdministrator", "Administrator", "Seller", "Visitor"]}
                   />
                 </div>
               }

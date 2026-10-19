@@ -1,5 +1,6 @@
 import { createAction, Middleware, Dispatch } from "@reduxjs/toolkit";
 import axios, { Method } from "axios";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
 
 // Define API action types with strong typing
 export const apiCallBegan = createAction<ApiCallBeganPayload>("api/callBegan");
@@ -34,17 +35,20 @@ const api: Middleware<object,unknown, Dispatch> = ({ dispatch }) => (next) => as
 
   next(action);
 
-  // Retrieve token from localStorage
-  const token = localStorage.getItem("token");
+  // Retrieve token from authHelpers
+  const token = getStoredToken();
+  const tenantSlug = localStorage.getItem("stylethread_tenant_slug") || "default";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "https://localhost:44314";
 
   try {
     const response = await axios.request({
-      baseURL: "https://localhost:44314",
+      baseURL: apiBaseUrl,
       url,
       method,
       data,
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "X-Tenant-Slug": tenantSlug,
       },
     });
 

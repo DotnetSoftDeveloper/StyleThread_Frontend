@@ -13,6 +13,7 @@ import { Category, DropdownOptions } from "../../Types/Interface/DropDown";
 import { LoginModal } from "../../Components/LoginModal/LoginModal";
 import { useAuth } from "../Login/useAuth";
 import HomeEmptyState from "../../Components/HomeEmptyState/HomeEmptyState";
+import HeroBanner from "../../Components/HeroBanner/HeroBanner";
 
 const normalizeSearchText = (value: unknown) =>
   String(value ?? "").trim().toLowerCase();
@@ -194,6 +195,9 @@ const Home: React.FC = () => {
 
   return (
     <main className="home-page">
+      {/* Dynamic Store Hero Banner (Hidden during active search) */}
+      {!searchTerm && <HeroBanner />}
+
       {/* Category Navigation Panel */}
       <section className="home-filter-panel" aria-label="Collections and Categories">
         <FilterBar

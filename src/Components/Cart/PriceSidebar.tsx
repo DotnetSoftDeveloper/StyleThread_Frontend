@@ -3,6 +3,7 @@ import './PriceSidebar.css';
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { CartItem } from "../../Types/Interface/ICart";
+import { getStoredToken, clearStoredAuth } from "../../Utils/Helper/authHelpers";
 
 // interface ListedCartItem {
 //   price: number;
@@ -42,7 +43,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
 
     const handleCheckout = async () => {
       try {
-        const token = localStorage.getItem("auth");
+        const token = getStoredToken();
         if (!token) {
           alert("Client information is missing. Please log in.");
           return;
@@ -54,7 +55,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
         } catch (error) {
           console.error("Invalid token", error);
           alert("Session expired. Please log in again.");
-          localStorage.removeItem("auth");
+          clearStoredAuth();
           return;
         }
 
@@ -102,7 +103,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
           console.error("Unexpected API response:", response.data);
           alert("Failed to create order. Please try again.");
         }
-      } catch (error: unknown) {
+      } catch (error: any) {
         if (axios.isAxiosError(error)) {
           console.error(
             "Error during checkout:",

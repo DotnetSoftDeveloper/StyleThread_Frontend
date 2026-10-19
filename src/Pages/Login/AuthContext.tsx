@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
+import { getStoredToken, clearStoredAuth } from "../../Utils/Helper/authHelpers";
 
 // Define the shape of the AuthContext
 interface AuthContextType {
@@ -17,15 +18,16 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("auth"));
+  const [token, setToken] = useState<string | null>(getStoredToken());
   const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Decode JWT token
-  const decodeToken = (token: string | null): { exp: number; role?: string } | null => {
+  const decodeToken = (token: string | null): { exp: number; role?: string | string[] } | null => {
     if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
+      const cleanToken = token.startsWith('"') && token.endsWith('"') ? token.slice(1, -1) : token;
+      const payload = JSON.parse(atob(cleanToken.split(".")[1]));
       return payload;
     } catch (error) {
       console.error("Invalid token:", error);
@@ -43,10 +45,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Handle logout
   const handleLogout = useCallback(() => {
     const dupToken = token;
-    localStorage.removeItem("token");
+    clearStoredAuth();
     setToken(null);
     setRole(null);
-    if (dupToken!=null || dupToken == "User registered successfully.") {
+    if (dupToken != null || dupToken === "User registered successfully.") {
       navigate("/signin");
     }
   }, [navigate, token]);
@@ -73,7 +75,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (token) {
       const payload = decodeToken(token);
-      setRole(payload?.role || null);
+      const userRole = Array.isArray(payload?.role) ? payload.role[0] : payload?.role;
+      setRole(userRole || null);
+    } else {
+      setRole(null);
     }
   }, [token]);
 

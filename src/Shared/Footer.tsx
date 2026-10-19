@@ -6,18 +6,26 @@ import {
   FaInstagram,
   FaTwitter,
   FaShieldAlt,
-  FaTruck
+  FaTruck,
+  FaEnvelope,
+  FaPhone
 } from "react-icons/fa";
+import { useTenant } from "../Context/TenantContext";
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const { tenant, settings } = useTenant();
+
+  const storeName = tenant?.storeName || "Style Thread";
+  const currencySymbol = settings?.currency === "INR" || !settings?.currency ? "₹" : `${settings.currency} `;
+  const freeShippingThreshold = settings?.freeShippingThreshold ?? 500;
 
   return (
     <footer className="footer-container" role="contentinfo">
       <div className="footer-content">
         {/* Brand & Mission Column */}
         <div className="footer-section footer-section--brand">
-          <div className="footer-brand-title">Style Thread</div>
+          <div className="footer-brand-title">{storeName}</div>
           <p className="footer-text">
             Discover contemporary clothing and curated fashion collections. Quality apparel designed for everyday elegance and comfort.
           </p>
@@ -28,7 +36,7 @@ const Footer: React.FC = () => {
             </span>
             <span className="footer-trust-badge">
               <FaTruck aria-hidden="true" />
-              <span>Fast Shipping</span>
+              <span>Free Shipping &gt; {currencySymbol}{freeShippingThreshold}</span>
             </span>
           </div>
         </div>
@@ -80,9 +88,29 @@ const Footer: React.FC = () => {
           <p className="footer-text footer-text--sub">
             Follow our journey on social media for new seasonal drops, sales, and style guides.
           </p>
+          {(settings?.supportEmail || settings?.supportPhone) && (
+            <div className="footer-contact-info" style={{ marginBottom: "1rem", fontSize: "0.85rem", color: "#cbd5e1" }}>
+              {settings.supportEmail && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                  <FaEnvelope aria-hidden="true" style={{ color: "var(--tenant-accent, #38bdf8)" }} />
+                  <a href={`mailto:${settings.supportEmail}`} style={{ color: "#e2e8f0", textDecoration: "none" }}>
+                    {settings.supportEmail}
+                  </a>
+                </div>
+              )}
+              {settings.supportPhone && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <FaPhone aria-hidden="true" style={{ color: "var(--tenant-accent, #38bdf8)" }} />
+                  <a href={`tel:${settings.supportPhone}`} style={{ color: "#e2e8f0", textDecoration: "none" }}>
+                    {settings.supportPhone}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
           <div className="footer-social-row">
             <a
-              href="https://facebook.com"
+              href={settings?.facebookUrl || "https://facebook.com"}
               target="_blank"
               rel="noopener noreferrer"
               className="footer-social-circle"
@@ -100,7 +128,7 @@ const Footer: React.FC = () => {
               <FaTwitter aria-hidden="true" />
             </a>
             <a
-              href="https://instagram.com"
+              href={settings?.instagramUrl || "https://instagram.com"}
               target="_blank"
               rel="noopener noreferrer"
               className="footer-social-circle"
@@ -115,7 +143,7 @@ const Footer: React.FC = () => {
       {/* Bottom Copyright & Legal Strip */}
       <div className="footer-bottom">
         <p className="footer-bottom-text">
-          © {currentYear} Style Thread. All rights reserved.
+          © {currentYear} {storeName}. All rights reserved.
         </p>
         <div className="footer-bottom-links">
           <span>Privacy Policy</span>
