@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import entityReducers from "./EntitySlices"; // default export map
+import wishlistReducer from "./WishlistSlice";
 
 const store = configureStore({
   reducer: {
-    ...entityReducers
+    ...entityReducers,
+    wishlist: wishlistReducer,
   }
 });
 

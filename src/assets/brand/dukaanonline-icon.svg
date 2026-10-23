@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <!-- Background Container -->
+  <rect width="60" height="60" rx="14" fill="#0f172a"/>
+  
+  <!-- Storefront Body (Teal) -->
+  <rect x="11" y="24" width="38" height="26" rx="4" fill="#0d9488"/>
+  <rect x="14" y="27" width="32" height="20" rx="2" fill="#0f766e"/>
+  
+  <!-- White Letter 'D' -->
+  <path d="M24 31H28.5C31.5 31 33.8 33 33.8 37C33.8 41 31.5 43 28.5 43H24V31ZM27.2 40.4H28.6C30.2 40.4 31.2 39.2 31.2 37C31.2 34.8 30.2 33.6 28.6 33.6H27.2V40.4Z" fill="#ffffff"/>
+
+  <!-- Orange Shop Awning -->
+  <path d="M8 24L12 12H48L52 24H8Z" fill="#ea580c"/>
+  <!-- Awning Stripes -->
+  <path d="M12 12L8 24H15L18 12H12Z" fill="#f97316"/>
+  <path d="M24 12L22 24H29L30 12H24Z" fill="#f97316"/>
+  <path d="M36 12L36 24H43L42 12H36Z" fill="#f97316"/>
+  <path d="M48 12L50 24H52L48 12Z" fill="#ea580c"/>
+
+  <!-- Awning Scallops -->
+  <circle cx="11.5" cy="24" r="3.5" fill="#f97316"/>
+  <circle cx="18.5" cy="24" r="3.5" fill="#ea580c"/>
+  <circle cx="25.5" cy="24" r="3.5" fill="#f97316"/>
+  <circle cx="32.5" cy="24" r="3.5" fill="#ea580c"/>
+  <circle cx="39.5" cy="24" r="3.5" fill="#f97316"/>
+  <circle cx="46.5" cy="24" r="3.5" fill="#ea580c"/>
+</svg>

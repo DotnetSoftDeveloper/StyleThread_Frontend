@@ -16,9 +16,10 @@ import { GenericResponse } from "../../Types/Interface/IGenericResponse";
 import { CartItem } from "../../Types/Interface/ICart";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import { getCartCount } from "../../Utils/Helper/cartHelpers";
-import NoImageFound from "./../../Assests/NoImageFound.jpg";
 import { Product } from "../../Types/Interface/IProduct";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
+import NoImageFound from "./../../Assests/NoImageFound.jpg";
 
 interface CustomerData {
   iss: string;
@@ -34,6 +35,8 @@ interface Props {
 
 const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
   const navigate = useNavigate();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const ref = useRef<LoadingBarRef | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const { showToast } = useToast();
@@ -71,7 +74,7 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
         })
       ).unwrap()) as GenericResponse<CartItem>;
 
-      if (response.success && response.content) {
+      if (response && response.success && response.content) {
         const updatedItem = response.content;
         const updatedCart = cartItems.map((item) =>
           item.cartId === updatedItem.cartId ? updatedItem : item
@@ -80,9 +83,12 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
         dispatch(setCartList(updatedCart));
         syncLocalStorage(updatedCart);
         showToast("success", "Quantity updated successfully!");
+      } else {
+        showToast("error", response?.message || response?.error || "Failed to update quantity.");
       }
-    } catch {
-      showToast("error", "Failed to update quantity.");
+    } catch (err: any) {
+      const msg = err?.message || err?.Message || "Failed to update quantity.";
+      showToast("error", msg);
     } finally {
       ref.current?.complete();
       setLoading(false);
@@ -113,9 +119,10 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
 
   /** 🔹 Decode token & fetch cart */
   useEffect(() => {
-    const token = localStorage.getItem("auth");
+    const token = getStoredToken();
     if (!token) {
       setErrorMessage("Please log in to view your cart.");
+      setLoading(false);
       return;
     }
 
@@ -154,6 +161,20 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
   if (loading) return <LoadingBar color="#f11946" ref={ref} />;
   if (errorMessage) return <p className="error">{errorMessage}</p>;
 
+  const getProductForCartItem = (productId: number): Product | undefined => {
+    if (Array.isArray(products)) {
+      return products.find((p: Product) => p.productId === productId);
+    }
+    return (products as any)?.productId === productId ? (products as any) : undefined;
+  };
+
+  const hasAnyOutOfStockItems = cartItems.some((item) => {
+    const product = getProductForCartItem(item.productId);
+    const variant = product?.productVariants?.[0];
+    const stock = variant?.inventory ?? 0;
+    return stock <= 0 || item.quantity > stock;
+  });
+
   return (
     <div>
       <div className="cart-items-section">
@@ -165,19 +186,23 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
           <span className="cart-items-count">{cartItems.length} items</span>
         </div>
 
+        {hasAnyOutOfStockItems && (
+          <div style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", color: "#be123c", fontSize: "0.92rem", fontWeight: 500 }}>
+            ⚠️ Some items in your bag are currently out of stock or exceed available quantity. Please adjust quantities or remove them to proceed.
+          </div>
+        )}
+
         {cartItems.length > 0 ? (
           <div className="cart-items-list">
             {cartItems.map((item, index) => {
-              let product: Product | undefined;
+              const product = getProductForCartItem(item.productId);
+              const variant = product?.productVariants?.[0];
+              const itemStock = variant?.inventory ?? 0;
+              const isItemOutOfStock = itemStock <= 0;
+              const isQuantityExceeded = !isItemOutOfStock && item.quantity > itemStock;
 
-              if (Array.isArray(products)) {
-                product = products.find(
-                  (p: Product) => p.productId === item.productId
-                );
-              } else {
-                product =
-                  products.productId === item.productId ? products : undefined;
-              }
+              const itemPrice = variant?.salePrice ?? variant?.price ?? 100;
+              const itemImage = variant?.image?.[0] || NoImageFound;
 
               return (
                 <div
@@ -190,22 +215,30 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                     onClick={() => navigate(`/product/${item.productId}`)}
                   >
                     <img
-                      src={
-                        product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.image[0] || NoImageFound
-                      }
+                      src={itemImage}
                       alt={product?.name || `Product #${item.productId}`}
                       className="cart-item-image"
                     />
                     <div className="cart-item-details">
                       <h4>{product?.name || `Product #${item.productId}`}</h4>
-                      <p>
-                        ₹
-                        {product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.price || 100}
-                      </p>
+                      <p>₹{itemPrice}</p>
+                      {isItemOutOfStock ? (
+                        <span style={{ display: "inline-block", background: "#fee2e2", color: "#b91c1c", padding: "2px 8px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 700, marginTop: "4px" }}>
+                          Out of Stock
+                        </span>
+                      ) : isQuantityExceeded ? (
+                        <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 700, marginTop: "4px" }}>
+                          ⚠️ Only {itemStock} available
+                        </span>
+                      ) : itemStock <= 5 ? (
+                        <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 600, marginTop: "4px" }}>
+                          ⚡ Only {itemStock} left in stock
+                        </span>
+                      ) : (
+                        <span style={{ display: "inline-block", color: "#16a34a", fontSize: "0.8rem", fontWeight: 500, marginTop: "4px" }}>
+                          ✓ In Stock
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -239,7 +272,7 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                               item.quantity + 1
                             )
                           }
-                          disabled={item.quantity === 5}
+                          disabled={item.quantity >= 5 || item.quantity >= itemStock || isItemOutOfStock}
                         >
                           <FaPlus />
                         </button>
@@ -254,18 +287,11 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
                       <FaTrash />
                     </button>
                   </div>
-                  {/* </div>
-                  </div> */}
 
                   <div className="cart-item-total">
                     <span>Item total</span>
                     <strong>
-                      ₹
-                      {(
-                        (product?.productVariants?.find(
-                          (x) => x.productId == item.productId
-                        )?.price || 100) * item.quantity
-                      ).toFixed(2)}
+                      ₹{(itemPrice * item.quantity).toFixed(2)}
                     </strong>
                   </div>
                 </div>
@@ -275,7 +301,7 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
         ) : (
           <div className="empty-cart">
             <img
-              src="https://assets9.lottiefiles.com/packages/lf20_j1adxtyb.json" // Example Lottie animation
+              src="https://assets9.lottiefiles.com/packages/lf20_j1adxtyb.json"
               alt="Empty Cart"
               className="empty-cart-animation"
             />
@@ -283,7 +309,7 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
             <p>Looks like you haven’t added anything yet.</p>
             <button
               className="explore-btn"
-              onClick={() => navigate("/home")}
+              onClick={() => navigate(`/store/${currentStoreSlug}`)}
             >
               Explore Products →
             </button>
@@ -292,8 +318,14 @@ const CartItems: React.FC<Props> = ({ cartItems, onNext }) => {
       </div>
 
       <div className="cart-footer">
-        <button className="place-order-btn" onClick={onNext}>
-          Place Order →
+        <button 
+          className="place-order-btn" 
+          onClick={onNext}
+          disabled={hasAnyOutOfStockItems}
+          style={hasAnyOutOfStockItems ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+          title={hasAnyOutOfStockItems ? "Please remove or adjust out-of-stock items before placing your order" : undefined}
+        >
+          {hasAnyOutOfStockItems ? "Items Unavailable in Bag" : "Place Order →"}
         </button>
       </div>
     </div>

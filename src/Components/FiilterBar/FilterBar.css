@@ -1,62 +1,163 @@
+/* ==========================================================================
+   CATEGORY FILTER BAR — Professional Horizontal Scroll Strip
+   ========================================================================== */
+
+.filter-bar-wrapper {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Left / right fade-out scroll hint */
+.filter-bar-wrapper::before,
+.filter-bar-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+.filter-bar-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, transparent);
+}
+.filter-bar-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, transparent);
+}
+
 .filter-bar {
-    background-color: white;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-  }
-  
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-options {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin: 0;
+  padding: 0 1.5rem;
+  gap: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+/* ─── Each Tab Item ────────────────────────────────────────────────── */
+.filter-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.18s ease;
+  outline: none;
+}
+
+.filter-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 70%;
+  height: 2px;
+  background: #111827;
+  border-radius: 2px 2px 0 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-item:hover {
+  color: #111827;
+}
+
+.filter-item:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* ─── Active State ─────────────────────────────────────────────────── */
+.filter-item--active {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.filter-item--active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* ─── "All" pill — visually distinct first item ────────────────────── */
+.filter-item--all {
+  margin-right: 0.5rem;
+}
+
+.filter-item--all .filter-item-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 1rem;
+  background: #111827;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.18s ease;
+}
+
+.filter-item--all:not(.filter-item--active) .filter-item-text {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.filter-item--all:hover .filter-item-text {
+  background: #1f2937;
+  color: #ffffff;
+}
+
+/* Hide underline indicator for the "All" pill */
+.filter-item--all::after {
+  display: none;
+}
+
+/* ─── Divider between "All" and other tabs ─────────────────────────── */
+.filter-divider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: #e5e7eb;
+  margin: 0 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ─── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
   .filter-options {
-    list-style: none;
-    display: flex;
-    margin: 0;
-    padding: 0;
-    overflow-x: auto;
-    gap: 55px;
+    padding: 0 1rem;
   }
-  
+
   .filter-item {
-    position: relative;
-    font-size: 14px;
-    font-weight: 500;
-    color: #5a5a5a;
-    white-space: nowrap;
-    cursor: pointer;
-    padding-bottom: 4px; /* to make space for the underline */
-    transition: color 0.3s;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
   }
-  
-  .filter-item::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 2px;
-    width: 0%;
-    background-color: #000000;
-    transition: width 0.3s ease;
-  }
-  
-  .filter-item:hover {
-    color: #000000;
-  }
-  
-  .filter-item:hover::after {
-    width: 100%;
-  }
-  
-  
-  @media (max-width: 768px) {
-    .filter-bar {
-      padding: 10px;
-    }
-  
-    .filter-options {
-      gap: 10px;
-    }
-  
-    .filter-item {
-      font-size: 12px;
-    }
-  }
-  
+}

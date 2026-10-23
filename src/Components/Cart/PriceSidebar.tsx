@@ -1,8 +1,10 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import './PriceSidebar.css';
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { CartItem } from "../../Types/Interface/ICart";
+import { getStoredToken, clearStoredAuth } from "../../Utils/Helper/authHelpers";
 
 // interface ListedCartItem {
 //   price: number;
@@ -21,6 +23,8 @@ interface CustomerData {
 }
 
 const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   //   const [subtotal, setSubtotal] = useState<number>(0);
     const shippingCost: number = 50;
 
@@ -42,7 +46,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
 
     const handleCheckout = async () => {
       try {
-        const token = localStorage.getItem("auth");
+        const token = getStoredToken();
         if (!token) {
           alert("Client information is missing. Please log in.");
           return;
@@ -54,7 +58,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
         } catch (error) {
           console.error("Invalid token", error);
           alert("Session expired. Please log in again.");
-          localStorage.removeItem("auth");
+          clearStoredAuth();
           return;
         }
 
@@ -74,7 +78,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
             email: clientData.sub
           },
           reminderEnable: true,
-          callbackUrl: "http://localhost:3000/home",
+          callbackUrl: `${window.location.origin}/store/${currentStoreSlug}`,
           callbackMethod: "get"
         };
 
@@ -102,7 +106,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
           console.error("Unexpected API response:", response.data);
           alert("Failed to create order. Please try again.");
         }
-      } catch (error: unknown) {
+      } catch (error: any) {
         if (axios.isAxiosError(error)) {
           console.error(
             "Error during checkout:",

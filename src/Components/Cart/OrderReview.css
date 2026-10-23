@@ -269,6 +269,244 @@
   box-shadow: 0 8px 17px rgba(29, 78, 216, 0.26);
 }
 
+/* Coupon Section */
+.order-review__coupon-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.order-review__coupon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.order-review__coupon-icon {
+  font-size: 1.3rem;
+}
+
+.order-review__coupon-header strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.order-review__coupon-header p {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.order-review__coupon-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.order-review__coupon-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.order-review__coupon-input {
+  flex: 1;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0f172a;
+  outline: none;
+}
+
+.order-review__coupon-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.order-review__coupon-btn {
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.order-review__coupon-btn:hover:not(:disabled) {
+  background: #1f2937;
+}
+
+.order-review__coupon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-review__coupon-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.order-review__coupon-applied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.order-review__coupon-applied-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.applied-tag {
+  background: #059669;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.order-review__coupon-applied-info strong {
+  font-size: 0.92rem;
+  color: #065f46;
+}
+
+.applied-savings {
+  font-size: 0.85rem;
+  color: #047857;
+}
+
+.order-review__coupon-remove-btn {
+  background: transparent;
+  border: 1px solid #f87171;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.order-review__coupon-remove-btn:hover {
+  background: #fee2e2;
+}
+
+.order-review__offers-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+}
+
+.offers-drawer-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.offers-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.offer-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.offer-chip:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.offer-chip-code {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.offer-chip-desc {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #dbeafe;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Summary Card */
+.order-review__summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.order-review__summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.order-review__summary-row--discount {
+  color: #059669;
+  font-weight: 600;
+}
+
+.discount-value {
+  color: #059669;
+  font-weight: 700;
+}
+
+.order-review__summary-row--total {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.order-review__summary-row--total strong {
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
 @keyframes review-item-enter {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

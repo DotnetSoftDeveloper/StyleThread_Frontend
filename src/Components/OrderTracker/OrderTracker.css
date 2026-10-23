@@ -1,0 +1,324 @@
+/* ==========================================================================
+   ORDER TRACKER STYLING
+   ========================================================================== */
+
+.order-tracker {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.order-tracker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.order-tracker__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.order-tracker__icon {
+  color: #2563eb;
+  font-size: 1.15rem;
+}
+
+.order-tracker__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.order-tracker__status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.order-tracker__status-tag--placed,
+.order-tracker__status-tag--paid {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.order-tracker__status-tag--processing {
+  background: #fdf4ff;
+  color: #9333ea;
+  border: 1px solid #f0abfc;
+}
+
+.order-tracker__status-tag--dispatched,
+.order-tracker__status-tag--in_transit {
+  background: #f0fdf4;
+  color: #059669;
+  border: 1px solid #bbf7d0;
+}
+
+.order-tracker__status-tag--delivered {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.order-tracker__status-tag--cancelled {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Cancelled Alert Box */
+.order-tracker__cancelled-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.order-tracker__cancelled-icon {
+  font-size: 1.35rem;
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.order-tracker__cancelled-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem;
+}
+
+.order-tracker__cancelled-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+/* Stepper Horizontal Layout */
+.order-tracker__stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  margin: 1.75rem 0 1rem;
+  padding: 0 1rem;
+}
+
+.order-tracker__track-line {
+  position: absolute;
+  top: 18px;
+  left: 2rem;
+  right: 2rem;
+  height: 3px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.order-tracker__track-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.4s ease;
+}
+
+.order-tracker__step {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.order-tracker__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  transition: all 0.25s ease;
+}
+
+.order-tracker__step--completed .order-tracker__circle {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px #ecfdf5;
+}
+
+.order-tracker__step--current .order-tracker__circle {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px #eff6ff;
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.order-tracker__step-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+  line-height: 1.3;
+}
+
+.order-tracker__step--completed .order-tracker__step-title,
+.order-tracker__step--current .order-tracker__step-title {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.order-tracker__step-time {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* Dispatch & Tracking Logistics Pill */
+.order-tracker__dispatch-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.order-tracker__courier-details {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-tracker__courier-icon {
+  font-size: 1.35rem;
+  color: #2563eb;
+}
+
+.order-tracker__courier-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.order-tracker__tracking-num {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.order-tracker__tracking-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.order-tracker__copy-btn {
+  background: none;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.order-tracker__copy-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.order-tracker__eta {
+  font-size: 0.82rem;
+  color: #047857;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Responsive adjustment for small screens */
+@media (max-width: 640px) {
+  .order-tracker__stepper {
+    flex-direction: column;
+    padding-left: 2rem;
+    gap: 1.25rem;
+  }
+
+  .order-tracker__track-line {
+    top: 18px;
+    bottom: 18px;
+    left: 27px;
+    width: 3px;
+    height: auto;
+  }
+
+  .order-tracker__track-fill {
+    width: 100% !important;
+  }
+
+  .order-tracker__step {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 1rem;
+  }
+
+  .order-tracker__circle {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+}

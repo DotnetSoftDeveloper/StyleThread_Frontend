@@ -3,6 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import Loader from "../../Shared/Loader";
 import ProductCard from "../../Components/ProductCard/ProductCard";
+import ProductReviews from "../../Components/Reviews/ProductReviews";
+import SizeGuideModal from "../../Components/SizeGuide/SizeGuideModal";
+import CompleteTheLook from "../../Components/CrossSell/CompleteTheLook";
 import "./ProductDetail.css";
 import { AppDispatch, RootState } from "../../Store/ConfigureStore";
 import {
@@ -22,7 +25,10 @@ import {
   removeCart,
   setCartList
 } from "../../Store/EntitySlices";
+import { toggleWishlistAction } from "../../Store/WishlistSlice";
 import { getCartCount } from "../../Utils/Helper/cartHelpers";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 interface CustomerData {
   iss: string;
@@ -33,7 +39,8 @@ interface CustomerData {
 
 const ProductDetail: React.FC = () => {
   const { showToast } = useToast();
-  const { id } = useParams<{ id: string }>();
+  const { id, storeSlug } = useParams<{ id: string; storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -48,8 +55,13 @@ const ProductDetail: React.FC = () => {
     (state: RootState) => state.cartItem.list
   ) as CartItem[];
 
+  const wishlistIds = useSelector(
+    (state: RootState) => state.wishlist?.itemIds || []
+  );
+
   const productId = id ? parseInt(id, 10) : 0;
   const fetchProduct = productData.find((item) => item.productId === productId);
+  const isWishlisted = wishlistIds.includes(productId);
 
   const existingCartItem = cartItems.find(
     (item) => item.productId === fetchProduct?.productId
@@ -57,11 +69,16 @@ const ProductDetail: React.FC = () => {
 
   const [selectedColorVariant, setSelectedColorVariant] =
     useState<ProductVariant | null>(null);
+
+  const currentStock = selectedColorVariant?.inventory ?? 0;
+  const isOutOfStock = currentStock <= 0;
+  const isLowStock = currentStock > 0 && currentStock <= 5;
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductVariantSize | null>(
     null
   );
   const [sizeSelectionError, setSizeSelectionError] = useState<boolean>(false);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState<boolean>(false);
 
   /** 🔹 Sync local storage */
   const syncLocalStorage = (cart: CartItem[]) => {
@@ -88,7 +105,7 @@ const ProductDetail: React.FC = () => {
 
   /** 🔹 Hydrate cart */
   useEffect(() => {
-    const token = localStorage.getItem("auth");
+    const token = getStoredToken();
     if (!token) return;
 
     try {
@@ -140,15 +157,19 @@ const ProductDetail: React.FC = () => {
     setSizeSelectionError(false);
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (): Promise<boolean> => {
     if (!selectedSize || !fetchProduct || !selectedColorVariant) {
       setSizeSelectionError(true);
-      return;
+      return false;
+    }
+    if (isOutOfStock) {
+      showToast("error", "Sorry, this item is currently out of stock.");
+      return false;
     }
     if (!customerId) {
       showToast("error", "Please login first.");
-      navigate("/signin");
-      return;
+      navigate(`/store/${currentStoreSlug}/signin`);
+      return false;
     }
 
     try {
@@ -160,7 +181,8 @@ const ProductDetail: React.FC = () => {
       };
 
       if (entity.quantity > 5) {
-        return showToast("info", "You can only add up to 5 items.");
+        showToast("info", "You can only add up to 5 items.");
+        return false;
       }
 
       const response = (await dispatch(
@@ -169,8 +191,7 @@ const ProductDetail: React.FC = () => {
           : addToCart({ url: "/api/Cart", entity })
       ).unwrap()) as GenericResponse<CartItem | CartItem[]>;
 
-      if (response.success) {
-        await dispatch(fetchCart({ customerId }));
+      if (response && response.success) {
         const refreshedCart = (await dispatch(
           fetchCart({ customerId })
         ).unwrap()) as GenericResponse<CartItem[]>;
@@ -185,10 +206,17 @@ const ProductDetail: React.FC = () => {
           "success",
           existingCartItem ? "Quantity updated!" : "Item added to cart!"
         );
+        return true;
+      } else {
+        const msg = response?.message || response?.error || "Could not add item to cart.";
+        showToast("error", msg);
+        return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding to cart:", error);
-      showToast("error", "Could not add item to cart.");
+      const msg = error?.message || error?.Message || "Could not add item to cart.";
+      showToast("error", msg);
+      return false;
     }
   };
 
@@ -243,12 +271,53 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
-    if (selectedSize) navigate("/cart");
+    if (isOutOfStock) {
+      showToast("error", "Sorry, this item is currently out of stock.");
+      return;
+    }
+    const added = await handleAddToCart();
+    if (added && selectedSize) navigate(`/store/${currentStoreSlug}/cart`);
+  };
+
+  const handleToggleWishlist = async () => {
+    const token = getStoredToken();
+    if (!token) {
+      showToast("info", "Please sign in to save items to your wishlist.");
+      navigate(`/store/${currentStoreSlug}/signin`);
+      return;
+    }
+
+    if (!fetchProduct) return;
+
+    try {
+      await dispatch(
+        toggleWishlistAction({
+          productId: fetchProduct.productId,
+          item: {
+            wishlistId: 0,
+            productId: fetchProduct.productId,
+            productName: fetchProduct.name,
+            productDescription: fetchProduct.description,
+            price: selectedColorVariant?.price ?? 0,
+            salePrice: selectedColorVariant?.salePrice,
+            imageUrl: selectedColorVariant?.image?.[0],
+            inventory: currentStock,
+            inStock: !isOutOfStock,
+          },
+        })
+      ).unwrap();
+
+      showToast(
+        "success",
+        isWishlisted ? "Removed from wishlist" : "Saved to your wishlist!"
+      );
+    } catch {
+      showToast("error", "Failed to update wishlist");
+    }
   };
 
   const handleCardClick = (product: Product) => {
-    navigate(`/product/${product.productId}`);
+    navigate(`/store/${currentStoreSlug}/product/${product.productId}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -305,6 +374,26 @@ const ProductDetail: React.FC = () => {
             <span className="price-note">Inclusive of all taxes</span>
           </div>
 
+          {/* Stock status indicator */}
+          <div className="stock-indicator-container">
+            {isOutOfStock ? (
+              <span className="stock-indicator stock-indicator--out">
+                <span className="stock-dot stock-dot--red"></span>
+                Out of Stock
+              </span>
+            ) : isLowStock ? (
+              <span className="stock-indicator stock-indicator--low">
+                <span className="stock-dot stock-dot--amber"></span>
+                ⚡ Only {currentStock} left in stock - order soon!
+              </span>
+            ) : (
+              <span className="stock-indicator stock-indicator--in">
+                <span className="stock-dot stock-dot--green"></span>
+                ✓ In Stock ({currentStock} available)
+              </span>
+            )}
+          </div>
+
           <div className="color-options">
             <div className="option-heading">
               <span>Colour</span>
@@ -328,7 +417,17 @@ const ProductDetail: React.FC = () => {
 
           <div className="size-options">
             <div className="option-heading">
-              <span>Choose size</span>
+              <div className="option-heading-left">
+                <span>Choose size</span>
+                <button
+                  type="button"
+                  className="size-guide-trigger-btn"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  aria-label="Open size and fit guide"
+                >
+                  📏 Size Guide
+                </button>
+              </div>
               <small>{selectedColorVariant?.inventory ?? 0} available</small>
             </div>
             <div className="sizes">
@@ -355,11 +454,21 @@ const ProductDetail: React.FC = () => {
           <div className="actions" aria-label="Purchase actions">
             {!existingCartItem || existingCartItem.quantity <= 0 ? (
               <>
-                <button type="button" className="add-to-cart" onClick={handleAddToCart}>
-                  Add to Cart
+                <button
+                  type="button"
+                  className="add-to-cart"
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                >
+                  {isOutOfStock ? "Out of Stock" : "Add to Cart"}
                 </button>
-                <button type="button" className="buy-now" onClick={handleBuyNow}>
-                  Buy Now
+                <button
+                  type="button"
+                  className="buy-now"
+                  onClick={handleBuyNow}
+                  disabled={isOutOfStock}
+                >
+                  {isOutOfStock ? "Unavailable" : "Buy Now"}
                 </button>
               </>
             ) : (
@@ -368,7 +477,7 @@ const ProductDetail: React.FC = () => {
                 <span>{existingCartItem.quantity}</span>
                 <button
                   onClick={handleAddToCart}
-                  disabled={existingCartItem.quantity >= 5}
+                  disabled={existingCartItem.quantity >= 5 || isOutOfStock}
                   type="button"
                   aria-label="Add one item"
                 >
@@ -376,6 +485,16 @@ const ProductDetail: React.FC = () => {
                 </button>
               </div>
             )}
+
+            <button
+              type="button"
+              className={`wishlist-action-btn ${isWishlisted ? "wishlist-action-btn--active" : ""}`}
+              onClick={handleToggleWishlist}
+              title={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+              aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+            >
+              {isWishlisted ? <FaHeart color="#ef4444" /> : <FaRegHeart />}
+            </button>
           </div>
 
           <div className="accordion" aria-label="Product information">
@@ -395,6 +514,10 @@ const ProductDetail: React.FC = () => {
         </section>
       </main>
 
+      <ProductReviews productId={fetchProduct.productId} />
+
+      <CompleteTheLook currentProduct={fetchProduct} />
+
       <section className="related-products">
         <div className="related-products__heading">
           <div>
@@ -412,6 +535,12 @@ const ProductDetail: React.FC = () => {
           ))}
         </div>
       </section>
+
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+        productName={fetchProduct.name}
+      />
     </>
   );
 };

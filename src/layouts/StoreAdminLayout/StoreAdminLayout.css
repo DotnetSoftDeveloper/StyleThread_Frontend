@@ -1,0 +1,397 @@
+/* StoreAdminLayout.css - DukaanOnline Store Admin Merchant Portal */
+
+.store-admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: var(--navy-900, #0f172a);
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Store Admin Sidebar
+   ========================================================================== */
+.m-sidebar {
+  width: var(--sidebar-width, 260px);
+  background-color: #0d1e29;
+  color: var(--slate-300, #cbd5e1);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width var(--transition-normal, 0.25s ease);
+  border-right: 1px solid #1a3245;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.m-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width, 72px);
+}
+
+.m-sidebar-header {
+  padding: 1.25rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1a3245;
+  height: var(--topbar-height, 68px);
+}
+
+.m-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.m-sidebar-logo {
+  height: 36px;
+  width: auto;
+}
+
+.m-badge-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--brand-teal, #0d9488);
+  color: #ffffff;
+}
+
+.m-sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--slate-400, #94a3b8);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast, 0.15s ease);
+}
+
+.m-sidebar-toggle-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Store Context Card */
+.m-store-card {
+  margin: 1rem 0.75rem 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md, 10px);
+}
+
+.m-store-info-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.m-store-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-400, #94a3b8);
+  font-weight: 600;
+}
+
+.m-store-live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.m-store-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-store-slug {
+  font-size: 0.75rem;
+  color: var(--brand-teal-500, #14b8a6);
+  font-family: monospace;
+}
+
+/* Navigation */
+.m-sidebar-nav {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.m-nav-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slate-500, #64748b);
+  padding: 0.65rem 0.75rem 0.25rem;
+}
+
+.m-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--slate-300, #cbd5e1);
+  text-decoration: none;
+  font-size: 0.885rem;
+  font-weight: 500;
+  border-radius: var(--radius-md, 10px);
+  transition: all var(--transition-fast, 0.15s ease);
+  position: relative;
+  white-space: nowrap;
+}
+
+.m-nav-item:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.m-nav-item.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--brand-teal, #0d9488), var(--brand-teal-dark, #0f766e));
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.m-nav-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.m-nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-sidebar-footer {
+  padding: 1rem 0.75rem;
+  border-top: 1px solid #1a3245;
+}
+
+/* ==========================================================================
+   Store Admin Top Bar & Content
+   ========================================================================== */
+.m-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  overflow-x: clip;
+}
+
+.m-topbar {
+  height: var(--topbar-height, 68px);
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(15, 23, 42, 0.05));
+}
+
+.m-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.m-topbar-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--navy-800, #1e293b);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.35rem;
+}
+
+.m-store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy-900, #0f172a);
+  background-color: var(--slate-100, #f1f5f9);
+  border: 1px solid var(--slate-200, #e2e8f0);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md, 10px);
+}
+
+.m-store-badge-icon {
+  color: var(--brand-teal, #0d9488);
+}
+
+.m-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.btn-view-storefront {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--brand-teal-dark, #0f766e);
+  background-color: var(--brand-teal-light, #f0fdfa);
+  border: 1px solid var(--brand-teal-200, #99f6e4);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md, 10px);
+  text-decoration: none;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-view-storefront:hover {
+  background-color: var(--brand-teal-100, #ccfbf1);
+  transform: translateY(-1px);
+}
+
+.m-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md, 10px);
+  background-color: var(--slate-100, #f1f5f9);
+}
+
+.m-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-orange, #ea580c), var(--brand-orange-500, #f97316));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.m-user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.m-user-email {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--navy-900, #0f172a);
+}
+
+.m-user-role-label {
+  font-size: 0.7rem;
+  color: var(--brand-orange, #ea580c);
+  font-weight: 600;
+}
+
+.m-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--slate-600, #475569);
+  background-color: transparent;
+  border: 1px solid var(--slate-300, #cbd5e1);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md, 10px);
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.m-logout-btn:hover {
+  color: var(--status-danger, #ef4444);
+  border-color: var(--status-danger, #ef4444);
+  background-color: var(--status-danger-light, #fef2f2);
+}
+
+/* Content */
+.m-content-body {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 992px) {
+  .m-sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .m-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .m-topbar-mobile-toggle {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .m-topbar {
+    padding: 0 0.75rem;
+  }
+
+  .m-topbar-right {
+    gap: 0.5rem;
+  }
+
+  .btn-view-storefront {
+    display: none;
+  }
+
+  .m-store-badge {
+    display: none;
+  }
+
+  .m-user-info {
+    display: none;
+  }
+
+  .m-logout-btn span {
+    display: none;
+  }
+
+  .m-content-body {
+    padding: 1rem 0.75rem;
+  }
+}

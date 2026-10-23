@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 
 // Define types for customer and payment response
@@ -44,6 +45,8 @@ interface RazorpayInstance {
 }
 
 const Payment: React.FC = () => {
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const amount = 500;
   const referenceId = "order-12345";
   const description = "Payment for Order";
@@ -64,7 +67,7 @@ const Payment: React.FC = () => {
           description,
           customer,
           reminderEnable: true,
-          callbackUrl: "http://localhost:3000/home", // Replace with your actual callback URL
+          callbackUrl: `${window.location.origin}/store/${currentStoreSlug}`,
           callbackMethod: "POST",
         }
       );

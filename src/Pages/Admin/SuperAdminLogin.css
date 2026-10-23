@@ -1,0 +1,306 @@
+/* SuperAdminLogin.css - Modern SaaS Styling for DukaanOnline Platform Control Center */
+
+.superadmin-login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #eff6ff 0%, #f8fafc 55%, #e2e8f0 100%);
+  padding: 2.5rem 1.25rem;
+  font-family: inherit;
+  color: #0f172a;
+}
+
+.superadmin-login-card {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2.25rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+.superadmin-brand-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.superadmin-logo-img {
+  height: 44px;
+  width: auto;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.superadmin-logo-img:hover {
+  transform: scale(1.02);
+}
+
+.superadmin-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.superadmin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.85rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  color: #1d4ed8;
+  font-size: 0.725rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+.superadmin-badge-icon {
+  font-size: 0.85rem;
+}
+
+.superadmin-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  margin: 0 0 0.45rem;
+}
+
+.superadmin-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Security Notice */
+.superadmin-notice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #0d9488;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.superadmin-notice-icon {
+  font-size: 1.1rem;
+  color: #0d9488;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.superadmin-notice strong {
+  display: block;
+  color: #0f172a;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.superadmin-notice p {
+  margin: 0;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+/* Error Alert */
+.superadmin-error-box {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+}
+
+.superadmin-error-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Form Styles */
+.superadmin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.superadmin-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.superadmin-input-group label {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.superadmin-input-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.superadmin-input-field:focus-within {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.superadmin-field-icon {
+  position: absolute;
+  left: 0.9rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.superadmin-input-field input {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 2.4rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.superadmin-input-field input::placeholder {
+  color: #94a3b8;
+}
+
+.superadmin-password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: color 0.15s ease;
+}
+
+.superadmin-password-toggle:hover {
+  color: #0f172a;
+}
+
+/* Submit Button */
+.superadmin-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background-color: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.925rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  transition: all 0.15s ease;
+  margin-top: 0.5rem;
+}
+
+.superadmin-submit-btn:hover:not(:disabled) {
+  background-color: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+}
+
+.superadmin-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Credential Hint */
+.superadmin-creds-hint {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 1.25rem;
+  text-align: center;
+}
+
+.superadmin-creds-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.superadmin-creds-hint code {
+  color: #0f766e;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+/* Footer Links */
+.superadmin-footer-links {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.superadmin-link-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 0.825rem;
+  color: #64748b;
+}
+
+.superadmin-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #0d9488;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.superadmin-portal-link:hover {
+  color: #0f766e;
+  text-decoration: underline;
+}

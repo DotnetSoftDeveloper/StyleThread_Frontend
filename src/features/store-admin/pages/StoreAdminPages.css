@@ -1,0 +1,300 @@
+/* StoreAdminPages.css - Styling for DukaanOnline Store Admin Merchant Portal Pages */
+
+.store-admin-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: 100%;
+}
+
+.store-admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.store-admin-page-title-group h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--navy-950, #020617);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.store-admin-page-title-group p {
+  font-size: 0.925rem;
+  color: var(--slate-500, #64748b);
+  margin: 0;
+}
+
+.store-admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Stat KPI Cards */
+.store-admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.store-admin-stat-card {
+  background-color: #ffffff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  transition: transform var(--transition-fast, 0.15s ease);
+}
+
+.store-admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.store-admin-stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.store-admin-stat-icon-wrapper.teal {
+  background-color: var(--brand-teal-50, #f0fdfa);
+  color: var(--brand-teal, #0d9488);
+  border: 1px solid var(--brand-teal-200, #99f6e4);
+}
+
+.store-admin-stat-icon-wrapper.orange {
+  background-color: var(--brand-orange-50, #fff7ed);
+  color: var(--brand-orange, #ea580c);
+  border: 1px solid var(--brand-orange-200, #fed7aa);
+}
+
+.store-admin-stat-icon-wrapper.blue {
+  background-color: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #bfdbfe;
+}
+
+.store-admin-stat-icon-wrapper.emerald {
+  background-color: #ecfdf5;
+  color: #10b981;
+  border: 1px solid #a7f3d0;
+}
+
+.store-admin-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--navy-900, #0f172a);
+  line-height: 1.1;
+  margin: 0 0 0.25rem;
+}
+
+.store-admin-stat-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--slate-500, #64748b);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Card Container */
+.store-admin-card {
+  background-color: #ffffff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.store-admin-card-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.store-admin-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy-900, #0f172a);
+  margin: 0;
+}
+
+.store-admin-card-body {
+  padding: 1.75rem;
+}
+
+/* Buttons */
+.btn-sa-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--brand-teal, #0d9488);
+  border: none;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--radius-md, 10px);
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.2);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-sa-primary:hover {
+  background-color: var(--brand-teal-dark, #0f766e);
+  transform: translateY(-1px);
+}
+
+.btn-sa-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy-800, #1e293b);
+  background-color: #ffffff;
+  border: 1px solid var(--slate-300, #cbd5e1);
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--radius-md, 10px);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-sa-secondary:hover {
+  background-color: var(--slate-50, #f8fafc);
+  border-color: var(--slate-400, #94a3b8);
+}
+
+/* Data Tables */
+.sa-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.sa-table th {
+  padding: 0.85rem 1.25rem;
+  background-color: var(--slate-50, #f8fafc);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-500, #64748b);
+  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+  white-space: nowrap;
+}
+
+.sa-table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.885rem;
+  color: var(--navy-800, #1e293b);
+  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+  vertical-align: middle;
+}
+
+.sa-table tbody tr:hover {
+  background-color: var(--slate-50, #f8fafc);
+}
+
+@media (min-width: 1024px) {
+  .sa-table-responsive {
+    overflow-x: visible;
+  }
+
+  .sa-table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .sa-table th,
+  .sa-table td {
+    padding: 0.75rem 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .sa-table-responsive {
+    overflow: visible;
+  }
+
+  .sa-table,
+  .sa-table thead,
+  .sa-table tbody,
+  .sa-table tr,
+  .sa-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .sa-table thead {
+    display: none;
+  }
+
+  .sa-table tbody tr {
+    background: #ffffff;
+    border-radius: var(--radius-lg, 12px);
+    border: 1px solid var(--slate-200, #e2e8f0);
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .sa-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--slate-100, #f1f5f9);
+    text-align: right;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .sa-table tbody td:last-child {
+    border-bottom: none;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .sa-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--slate-500, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+}
+

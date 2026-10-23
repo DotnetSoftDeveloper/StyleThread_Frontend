@@ -7,10 +7,13 @@ import {
 import axios, { Method } from "axios";
 import { GenericResponse } from "../Types/Interface/IGenericResponse";
 
+import { getStoredToken } from "../Utils/Helper/authHelpers";
+
 export interface EntityState<T> {
-  list: T | T[]; // ✅ always an array
+  list: T | T[];
   loading: boolean;
   error: string | null;
+  totalCount: number;
 }
 
 // 🔹 Generic async thunk factory
@@ -23,16 +26,17 @@ export const createEntityThunk = <T>(
     `${name}/${method.toLowerCase()}`,
     async (payload, { rejectWithValue }) => {
       try {
-        // ✅ standardize on 'auth', fallback to 'token' if needed
-        const token =
-          localStorage.getItem("auth") ?? localStorage.getItem("token") ?? "";
+        const token = getStoredToken() ?? "";
+        const tenantSlug =
+          localStorage.getItem("stylethread_tenant_slug") || "default";
 
         const response = await axios.request<GenericResponse<T | T[]>>({
           baseURL: "https://localhost:44314",
           url,
           method,
           headers: {
-            Authorization: token ? `Bearer ${token}` : ""
+            Authorization: token ? `Bearer ${token}` : "",
+            "X-Tenant-Slug": tenantSlug
           },
           ...(method === "GET" || method === "DELETE"
             ? { params: payload } // send query params for GET/DELETE
@@ -54,7 +58,8 @@ export function createEntitySlice<T>(name: string) {
   const initialState: EntityState<T> = {
     list: [],
     loading: false,
-    error: null
+    error: null,
+    totalCount: 0
   };
 
   const slice = createSlice({
@@ -79,21 +84,53 @@ export function createEntitySlice<T>(name: string) {
             state.error = null;
           }
         )
-        // Fulfilled
+        // Fulfilled (GET only replaces list)
         .addMatcher(
           (action) =>
-            action.type.startsWith(name) && action.type.endsWith("/fulfilled"),
+            action.type === `${name}/get/fulfilled`,
           (state, action: PayloadAction<GenericResponse<T | T[]>>) => {
             state.loading = false;
-            const { success, content } = action.payload ?? {};
+            const payload = (action.payload as any) ?? {};
+            const { success, content, totalCount, totalRecords, total } = payload;
             if (success && content) {
-              // ✅ normalize to array
-              state.list = Array.isArray(content)
-                ? (content as Draft<T[]>)
-                : ([content] as Draft<T[]>);
-            } else {
+              if (Array.isArray(content)) {
+                state.list = content as Draft<T[]>;
+              } else if (
+                content &&
+                typeof content === "object" &&
+                "items" in content &&
+                Array.isArray((content as any).items)
+              ) {
+                state.list = (content as any).items as Draft<T[]>;
+              } else {
+                state.list = [content] as Draft<T[]>;
+              }
+            } else if (Array.isArray(payload)) {
+              state.list = payload as Draft<T[]>;
+            } else if (success && content === null) {
               state.list = [];
             }
+            const count =
+              totalCount ??
+              totalRecords ??
+              total ??
+              (content && typeof content === "object"
+                ? (content as any).totalCount ??
+                  (content as any).totalRecords ??
+                  (content as any).total
+                : undefined);
+            const listLen = Array.isArray(state.list) ? state.list.length : 0;
+            state.totalCount = typeof count === "number" ? count : listLen;
+          }
+        )
+        // Fulfilled (non-GET actions like post, put, delete only reset loading)
+        .addMatcher(
+          (action) =>
+            action.type.startsWith(name) &&
+            action.type.endsWith("/fulfilled") &&
+            action.type !== `${name}/get/fulfilled`,
+          (state) => {
+            state.loading = false;
           }
         )
         // Rejected

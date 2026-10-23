@@ -1,10 +1,9 @@
 import React from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import ProductVariant from "../ProductVariant/ProductVariant";
-import "./ProductVariantsList.css"; // Import appropriate CSS file for styling
-import { ProductVariant as ProductVariantType } from "../../Types/Interface/IProduct"; // Ensure correct import path
+import "./ProductVariantsList.css";
+import { ProductVariant as ProductVariantType } from "../../Types/Interface/IProduct";
 
-// Define Props Interface
 interface ProductVariantsListProps {
   productVariants: ProductVariantType[];
   selectedVariantIndex: number;
@@ -22,66 +21,77 @@ export const ProductVariantsList: React.FC<ProductVariantsListProps> = ({
   deleteVariant,
   updateVariant
 }) => {
-  const maxVariants = 5; // Maximum allowed variants
+  const maxVariants = 5;
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     deleteVariant(selectedVariantIndex);
-
-    // Ensure selected index remains valid
     setSelectedVariantIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : 0));
   };
 
   return (
-    <div className="variants-container">
-      {/* Variant Count Display */}
-      <div className="variant-count-display">
-        Total Variants: {productVariants.length} / {maxVariants}
+    <div className="pvl-container">
+      {/* Header with pill tabs */}
+      <div className="pvl-header">
+        <h3 className="pvl-title">
+          Product Variants
+          <span className="pvl-badge">
+            {productVariants.length} of {maxVariants}
+          </span>
+        </h3>
       </div>
 
-      {/* Variant Selection */}
-      <div className="variant-selection">
+      {/* Pill Tab Selector */}
+      <div className="pvl-tabs">
         {productVariants.map((variant, index) => (
-          <div
-            key={variant.productVariantId || index} // Use a unique identifier if available
-            className={`variant-header ${selectedVariantIndex === index ? "selected" : ""}`}
+          <button
+            key={variant.productVariantId || index}
+            type="button"
+            className={`pvl-tab ${selectedVariantIndex === index ? "pvl-tab--active" : ""}`}
             onClick={() => setSelectedVariantIndex(index)}
           >
-            <h5>{index + 1}</h5>
-          </div>
+            Variant #{index + 1}
+          </button>
         ))}
 
-        {/* Add Variant Button (Hidden if max variants reached) */}
         {productVariants.length < maxVariants && (
-          <div className="variant-header">
-            <FaPlus className="icon" onClick={() => addVariant()} />
-          </div>
+          <button
+            type="button"
+            className="pvl-add-tab"
+            onClick={() => addVariant()}
+            title="Add another variant"
+          >
+            <FaPlus /> Add Variant
+          </button>
         )}
       </div>
 
-      {/* Variant Details */}
-      <div className="add-product-variant">
-        <div className="header-container">
-          <h3>Product Variants</h3>
+      {/* Variant Details Card */}
+      <div className="pvl-card">
+        <div className="pvl-card-header">
+          <span className="pvl-card-title">
+            Configuring Variant #{selectedVariantIndex + 1}
+          </span>
 
-          {/* Delete Variant Button (Only if more than 1 variant exists) */}
           {productVariants.length > 1 && (
-            <div className="deleteButton">
-              <FaTrash className="icon" onClick={handleDelete} />
-            </div>
+            <button
+              type="button"
+              className="pvl-delete-btn"
+              onClick={handleDelete}
+              title="Delete this variant"
+            >
+              <FaTrash /> Delete Variant
+            </button>
           )}
         </div>
 
-        {/* Product Variant Details */}
         {productVariants.length > 0 && (
-          <div className="row product-variants-container">
-            <ProductVariant
-              variantData={productVariants[selectedVariantIndex]}
-              updateVariant={(updatedVariant) =>
-                updateVariant(selectedVariantIndex, updatedVariant)
-              }
-            />
-          </div>
+          <ProductVariant
+            variantData={productVariants[selectedVariantIndex]}
+            updateVariant={(updatedVariant) =>
+              updateVariant(selectedVariantIndex, updatedVariant)
+            }
+          />
         )}
       </div>
     </div>

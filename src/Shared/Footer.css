@@ -1,32 +1,239 @@
+/* ==========================================================================
+   PROFESSIONAL E-COMMERCE FOOTER STYLING
+   ========================================================================== */
+
 .footer-container {
+  margin-top: auto;
+  width: 100%;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+  color: #94a3b8;
+  padding: clamp(2rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem) 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(2rem, 5vw, 2.75rem) clamp(1.25rem, 5vw, 3rem) 1.5rem;
-  background: #1a1a1a;
-  color: #f1f1f1;
+  box-sizing: border-box;
 }
 
-.footer-container *, .footer-container *::before, .footer-container *::after { box-sizing: border-box; }
-.footer-content { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.75rem, 5vw, 4rem); width: min(100%, 75rem); margin-bottom: 2rem; }
-.footer-section { min-width: 0; max-width: 20rem; }
-.footer-heading { margin: 0 0 0.875rem; font-size: 1.125rem; font-weight: 700; }
-.footer-text { margin: 0; color: #d7d7d7; font-size: 0.9375rem; line-height: 1.6; }
-.footer-links, .footer-social-links { display: grid; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
-.footer-container .nav-link, .footer-link, .footer-social-link { display: block; color: #f1f1f1; font-size: 0.9375rem; line-height: 1.4; text-decoration: none; transition: color 0.2s ease; }
-.footer-container .nav-link:hover, .footer-link:hover, .footer-social-link:hover { color: #76baff; }
-.footer-bottom { width: min(100%, 75rem); padding-top: 1.25rem; border-top: 1px solid #3a3a3a; text-align: center; }
-.footer-bottom-text { margin: 0; color: #cfcfcf; font-size: 0.875rem; }
-
-/* Tablets: the informational content gets a full row; link groups remain side-by-side. */
-@media (max-width: 700px) {
-  .footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.5rem; }
-  .footer-section:first-child { grid-column: 1 / -1; max-width: 34rem; }
+.footer-container *,
+.footer-container *::before,
+.footer-container *::after {
+  box-sizing: inherit;
 }
 
-/* Phones: each section is a comfortable full-width block. */
-@media (max-width: 440px) {
-  .footer-content { grid-template-columns: 1fr; gap: 1.75rem; }
-  .footer-section:first-child { grid-column: auto; }
-  .footer-heading { margin-bottom: 0.75rem; }
+/* 4-Column Grid */
+.footer-content {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.1fr;
+  gap: clamp(1.5rem, 3.5vw, 3rem);
+  width: 100%;
+  max-width: 84rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Brand Section */
+.footer-brand-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.65rem;
+}
+
+.footer-text {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.footer-text--sub {
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+}
+
+/* Trust Badges */
+.footer-trust-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.footer-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.footer-trust-badge svg {
+  color: #38bdf8;
+  font-size: 0.8rem;
+}
+
+/* Section Headings */
+.footer-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+  text-transform: capitalize;
+}
+
+/* Links List */
+.footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.footer-link {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.footer-link:hover {
+  color: #38bdf8;
+  transform: translateX(3px);
+}
+
+/* Social Buttons */
+.footer-social-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.footer-social-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.footer-social-circle:hover {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
+}
+
+/* Bottom Strip */
+.footer-bottom {
+  width: 100%;
+  max-width: 84rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.footer-bottom-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.footer-bottom-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.footer-bottom-links .dot {
+  color: #475569;
+}
+
+.footer-bottom-links span:not(.dot) {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.footer-bottom-links span:not(.dot):hover {
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (TABLETS & MOBILE)
+   ========================================================================== */
+
+/* Tablets & Small Laptops: 2 columns */
+@media (max-width: 960px) {
+  .footer-content {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .footer-section--brand {
+    grid-column: span 2;
+  }
+}
+
+/* Mobile Phones: 1 column clean stack */
+@media (max-width: 600px) {
+  .footer-container {
+    padding: 1.75rem 1rem 1rem;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .footer-section--brand {
+    grid-column: span 1;
+  }
+
+  .footer-trust-badges {
+    margin-top: 0.5rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .footer-bottom-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }

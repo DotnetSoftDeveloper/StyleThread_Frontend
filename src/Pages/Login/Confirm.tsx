@@ -9,6 +9,7 @@ import { useToast } from "../../Utils/Helper/ToastNotifications";
 
 interface LocationState {
   email?: string;
+  storeSlug?: string;
 }
 
 const Confirm: React.FC = () => {
@@ -20,7 +21,9 @@ const Confirm: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as LocationState)?.email;
+  const state = location.state as LocationState | null;
+  const email = state?.email;
+  const targetStore = state?.storeSlug || "default";
 
   useEffect(() => {
     console.log("location state:", location.state);
@@ -40,7 +43,7 @@ const Confirm: React.FC = () => {
 
     if (!email) {
       showToast("error", "Email is missing. Please register again.");
-      navigate("/signup");
+      navigate(`/store/${targetStore}/signup`);
       return;
     }
 
@@ -56,7 +59,7 @@ const Confirm: React.FC = () => {
 
       if (response.data.success) {
         showToast("success", "Email confirmed successfully. Please login.");
-        navigate("/signin");
+        navigate(`/store/${targetStore}/signin`);
       } else {
         showToast("error", response.data.message || "Invalid OTP.");
       }

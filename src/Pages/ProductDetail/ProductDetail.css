@@ -60,9 +60,29 @@
 .price-note { flex-basis: 100%; color: #667085; font-size: 0.76rem; }
 
 .color-options, .size-options { margin-top: 1.45rem; }
-.option-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.75rem; }
+.option-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
 .option-heading span { color: #344054; font-size: 0.92rem; font-weight: 750; }
 .option-heading small { color: #667085; font-size: 0.76rem; }
+.option-heading-left { display: flex; align-items: center; gap: 0.75rem; }
+.size-guide-trigger-btn {
+  background: transparent;
+  border: 1px dashed #2563eb;
+  color: #2563eb;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.size-guide-trigger-btn:hover {
+  background: #eff6ff;
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
 .color-swatches { display: flex; flex-wrap: wrap; gap: 0.7rem; }
 .color-swatch { width: 3.25rem; height: 3.25rem; overflow: hidden; padding: 0; border: 2px solid transparent; border-radius: 50%; background: #f2f4f7; cursor: pointer; transition: border-color 180ms ease, transform 180ms ease; }
 .color-swatch img { width: 100%; height: 100%; object-fit: cover; }
@@ -128,4 +148,88 @@
 
 @media (prefers-reduced-motion: reduce) {
   .main-image img, .thumbnail, .color-swatch, .size, .add-to-cart, .buy-now { transition: none; }
+}
+
+/* Stock Badges in Product Detail */
+.stock-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+.stock-indicator--in {
+  background-color: #ecfdf3;
+  color: #027a48;
+}
+
+.stock-indicator--low {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.stock-indicator--out {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.88; transform: scale(1.02); }
+}
+
+.stock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.stock-dot--green { background-color: #12b76a; }
+.stock-dot--amber { background-color: #f59e0b; }
+.stock-dot--red { background-color: #ef4444; }
+
+/* Wishlist Button in Actions */
+.wishlist-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.2rem;
+  min-height: 3.2rem;
+  border-radius: 0.65rem;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #667085;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 180ms ease;
+}
+
+.wishlist-action-btn:hover {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #ef4444;
+  transform: translateY(-2px);
+}
+
+.wishlist-action-btn--active {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.add-to-cart:disabled, .buy-now:disabled {
+  background-color: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
