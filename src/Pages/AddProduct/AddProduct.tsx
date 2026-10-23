@@ -1,6 +1,6 @@
 import React, { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { fetchDropdowns, fetchProducts } from "../../Store/EntitySlices";
 import { ProductVariantsList } from "../../Components/ProductVariantList/ProductVariantsList";
@@ -14,6 +14,8 @@ import {
 } from "../../Types/Interface/IProduct";
 import { AppDispatch, RootState } from "../../Store/ConfigureStore";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
+import { resolveActiveTenantSlug } from "../../Utils/tenantHelper";
 import Loader from "../../Components/Loader/Loader";
 import {
   FaArrowLeft,
@@ -28,9 +30,19 @@ const AddProduct: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { product: initialProduct } = location.state || {};
+  const productsFromStore = useSelector((state: RootState) => state.products?.list as Product[]) || [];
   const { showToast } = useToast();
   const [loader, setLoading] = useState<boolean>(false);
+
+  const handleReturn = () => {
+    if (location.pathname.startsWith("/admin")) {
+      navigate("/admin/products");
+    } else {
+      navigate("/productList");
+    }
+  };
 
   const [product, setProduct] = useState<Product>({
     productId: initialProduct?.productId || 0,
@@ -165,34 +177,63 @@ const AddProduct: React.FC = () => {
     setLoading(true);
 
     try {
-      const method = initialProduct ? "PUT" : "POST";
-      const url = initialProduct
-        ? `https://localhost:44314/api/Products/${product.productId}`
-        : `https://localhost:44314/api/Products`;
+      const token = getStoredToken();
+      const slug = resolveActiveTenantSlug();
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "https://localhost:44314";
+
+      const targetId = product.productId || (id ? Number(id) : 0);
+      const isEditing = Boolean(initialProduct || targetId > 0);
+      const method = isEditing ? "PUT" : "POST";
+      const url = isEditing && targetId > 0
+        ? `${apiBaseUrl}/api/Products/${targetId}`
+        : `${apiBaseUrl}/api/Products`;
+
+      const sanitizedProduct = {
+        ...product,
+        productId: targetId > 0 ? targetId : product.productId,
+        productVariants: product.productVariants.map((v) => ({
+          ...v,
+          price: Number(v.price) || 0,
+          salePrice: Number(v.salePrice) || 0,
+          inventory: Number(v.inventory) || 0,
+          discount: Number(v.discount) || 0,
+          colorId: Number(v.colorId) || 0,
+          productId: targetId > 0 ? targetId : (v.productId || product.productId)
+        }))
+      };
 
       const response = await axios({
         method,
         url,
-        data: product,
-        headers: { "Content-Type": "application/json" }
+        data: sanitizedProduct,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(slug ? { "X-Tenant-Slug": slug } : {})
+        }
       });
 
-      if (response.data.error) {
+      if (response.data && response.data.error) {
         showToast("error", response.data.error);
       } else {
         setProduct(getEmptyProduct());
         showToast(
           "success",
-          initialProduct
+          isEditing
             ? "Product updated successfully!"
             : "Product added successfully!"
         );
         await dispatch(fetchProducts(undefined));
-        navigate("/productList");
+        handleReturn();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during API submission: ", error);
-      showToast("error", "An error occurred while submitting the form.");
+      const serverMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "An error occurred while submitting the form.";
+      showToast("error", serverMsg);
     } finally {
       setLoading(false);
     }
@@ -201,6 +242,35 @@ const AddProduct: React.FC = () => {
   useEffect(() => {
     dispatch(fetchDropdowns(undefined));
   }, [dispatch]);
+
+  // Rehydrate product when directly navigating or refreshing /editProduct/:id
+  useEffect(() => {
+    if (!initialProduct && id) {
+      if (Array.isArray(productsFromStore) && productsFromStore.length > 0) {
+        const found = productsFromStore.find((p) => p.productId === Number(id));
+        if (found) {
+          setProduct({
+            ...found,
+              productVariants: found.productVariants?.length
+                ? found.productVariants.map((variant: ProductVariant) => ({
+                    productVariantId: variant.productVariantId || 0,
+                    productId: variant.productId || 0,
+                    colorId: variant.colorId || 0,
+                    price: variant.price || 0,
+                    salePrice: variant.salePrice || 0,
+                    discount: variant.discount || 0,
+                    inventory: variant.inventory || 0,
+                    image: variant.image || [""],
+                    productVariantSizes: variant.productVariantSizes || []
+                  }))
+                : getEmptyProduct().productVariants
+          });
+        }
+      } else {
+        dispatch(fetchProducts(undefined));
+      }
+    }
+  }, [id, initialProduct, productsFromStore, dispatch]);
 
   return (
     <>
@@ -217,7 +287,7 @@ const AddProduct: React.FC = () => {
           <button
             type="button"
             className="ap-back-btn"
-            onClick={() => navigate("/productList")}
+            onClick={handleReturn}
           >
             <FaArrowLeft /> Back to Products
           </button>
@@ -400,7 +470,7 @@ const AddProduct: React.FC = () => {
             <button
               type="button"
               className="ap-cancel-btn"
-              onClick={() => navigate("/productList")}
+              onClick={handleReturn}
             >
               Cancel
             </button>

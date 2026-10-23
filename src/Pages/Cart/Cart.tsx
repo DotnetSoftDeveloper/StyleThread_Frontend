@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { AppDispatch, RootState } from "../../Store/ConfigureStore";
 import { CartItem } from "../../Types/Interface/ICart";
@@ -26,6 +26,8 @@ interface CustomerTokenPayload {
 
 const Cart: React.FC = () => {
   const navigate = useNavigate();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const dispatch = useDispatch<AppDispatch>();
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -58,7 +60,7 @@ const Cart: React.FC = () => {
     const token = getStoredToken();
     if (!token) {
       setLoading(false);
-      navigate("/signin");
+      navigate(`/store/${currentStoreSlug}/signin`);
       return;
     }
 
@@ -159,7 +161,7 @@ const Cart: React.FC = () => {
 
           <button
             className="explore-btn"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate(`/store/${currentStoreSlug}`)}
           >
             Explore Products
           </button>
@@ -167,6 +169,22 @@ const Cart: React.FC = () => {
       </div>
     );
   }
+
+  const hasOutOfStockItems = cartItems.some((item) => {
+    const prod = Array.isArray(products)
+      ? products.find((p) => p.productId === item.productId)
+      : undefined;
+    const v = prod?.productVariants?.[0];
+    const stock = v?.inventory ?? 0;
+    return stock <= 0 || item.quantity > stock;
+  });
+
+  const handleProceedToAddress = () => {
+    if (hasOutOfStockItems) {
+      return;
+    }
+    setStep("address");
+  };
 
   return (
     <div className="cart-page">
@@ -196,7 +214,7 @@ const Cart: React.FC = () => {
       </header>
       <div className="cart-main">
         {step === "cart" && (
-          <CartItems cartItems={cartItems} onNext={() => setStep("address")} />
+          <CartItems cartItems={cartItems} onNext={handleProceedToAddress} />
         )}
 
         {step === "address" && (

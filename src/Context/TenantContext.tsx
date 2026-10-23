@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { Tenant, TenantSettings, UpdateTenantSettingsRequest } from "../Types/Interface/ITenant";
 import { getCurrentTenant, updateCurrentTenantSettings } from "../Services/tenantService";
 import {
@@ -24,10 +25,19 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 initTenantAxiosInterceptor();
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
   const [activeSlug, setActiveSlugState] = useState<string>(() => resolveActiveTenantSlug());
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync active slug with URL navigation changes
+  useEffect(() => {
+    const detectedSlug = resolveActiveTenantSlug();
+    if (detectedSlug !== activeSlug) {
+      setActiveSlugState(detectedSlug);
+    }
+  }, [location.pathname, location.search, activeSlug]);
 
   const applyThemeVariables = useCallback((settings?: TenantSettings | null, storeName?: string) => {
     if (!settings) return;

@@ -46,16 +46,16 @@ const Footer: React.FC = () => {
           <h4 className="footer-heading">Quick Links</h4>
           <ul className="footer-links">
             <li>
-              <Link to="/home" className="footer-link">Home</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">Home</Link>
             </li>
             <li>
-              <Link to="/about" className="footer-link">About Us</Link>
+              <Link to={`/store/${tenant?.slug || "default"}/about`} className="footer-link">About Us</Link>
             </li>
             <li>
               <Link to="/contact" className="footer-link">Contact & Support</Link>
             </li>
             <li>
-              <Link to="/profile" className="footer-link">My Account & Orders</Link>
+              <Link to={`/store/${tenant?.slug || "default"}/profile`} className="footer-link">My Account & Orders</Link>
             </li>
           </ul>
         </div>
@@ -65,19 +65,19 @@ const Footer: React.FC = () => {
           <h4 className="footer-heading">Collections</h4>
           <ul className="footer-links">
             <li>
-              <Link to="/home" className="footer-link">All Products</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">All Products</Link>
             </li>
             <li>
-              <Link to="/home" className="footer-link">Men's Apparel</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">Men's Apparel</Link>
             </li>
             <li>
-              <Link to="/home" className="footer-link">Women's Fashion</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">Women's Fashion</Link>
             </li>
             <li>
-              <Link to="/home" className="footer-link">Baby & Kids</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">Baby & Kids</Link>
             </li>
             <li>
-              <Link to="/home" className="footer-link">Sports & Activewear</Link>
+              <Link to={`/store/${tenant?.slug || "default"}`} className="footer-link">Sports & Activewear</Link>
             </li>
           </ul>
         </div>
@@ -150,7 +150,13 @@ const Footer: React.FC = () => {
           <span className="dot">•</span>
           <span>Terms of Service</span>
           <span className="dot">•</span>
-          <span>Shipping & Returns</span>
+          <Link to="/admin/login" style={{ color: "inherit", textDecoration: "none" }}>
+            Store Admin Portal
+          </Link>
+          <span className="dot">•</span>
+          <Link to="/super-admin/login" style={{ color: "inherit", textDecoration: "none" }}>
+            Super Admin Portal
+          </Link>
         </div>
       </div>
     </footer>

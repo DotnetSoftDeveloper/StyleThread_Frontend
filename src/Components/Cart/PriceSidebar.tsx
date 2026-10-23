@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import './PriceSidebar.css';
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
@@ -22,6 +23,8 @@ interface CustomerData {
 }
 
 const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   //   const [subtotal, setSubtotal] = useState<number>(0);
     const shippingCost: number = 50;
 
@@ -75,7 +78,7 @@ const PriceSidebar: React.FC<PriceSidebarProps> = ({ cartItems }) => {
             email: clientData.sub
           },
           reminderEnable: true,
-          callbackUrl: "http://localhost:3000/home",
+          callbackUrl: `${window.location.origin}/store/${currentStoreSlug}`,
           callbackMethod: "get"
         };
 

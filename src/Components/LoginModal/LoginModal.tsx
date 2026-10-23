@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { FaEnvelope, FaLock, FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../../Pages/Login/useAuth";
@@ -24,6 +24,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onSuccess
 }) => {
   const navigate = useNavigate();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const { setToken } = useAuth();
   const { showToast } = useToast();
 
@@ -233,7 +235,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <button
               type="button"
               className="login-link-btn"
-              onClick={() => handleNavigate("/signup")}
+              onClick={() => handleNavigate(`/store/${currentStoreSlug}/signup`)}
             >
               Sign Up
             </button>

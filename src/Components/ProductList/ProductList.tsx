@@ -25,7 +25,7 @@ import {
 import { TiArrowSortedUp, TiArrowSortedDown, TiArrowUnsorted } from "react-icons/ti";
 import Loader from "../../Shared/Loader";
 import { fetchProducts } from "../../Store/EntitySlices";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { RootState, AppDispatch } from "../../Store/ConfigureStore";
 import { Product } from "../../Types/Interface/IProduct";
 
@@ -75,6 +75,7 @@ const SortIcon = ({ dir }: { dir: SortDirection | false }) => {
 const ProductList: React.FC = () => {
   const dispatch   = useDispatch<AppDispatch>();
   const navigate   = useNavigate();
+  const location   = useLocation();
 
   const products   = useSelector((state: RootState) => state.products?.list as Product[]);
   const totalCount = useSelector((state: RootState) => (state.products as any)?.totalCount as number ?? 0);
@@ -104,8 +105,13 @@ const ProductList: React.FC = () => {
     setPageNumber(1);
   };
 
-  const handleEdit   = (product: Product) =>
-    navigate(`/editProduct/${product.productId}`, { state: { product } });
+  const handleEdit = (product: Product) => {
+    if (location.pathname.startsWith("/admin")) {
+      navigate(`/admin/products/edit/${product.productId}`, { state: { product } });
+    } else {
+      navigate(`/editProduct/${product.productId}`, { state: { product } });
+    }
+  };
 
   const handleDelete = (productId: number) =>
     console.log("Delete product with ID:", productId);
@@ -125,27 +131,31 @@ const ProductList: React.FC = () => {
     {
       header: "SKU",
       accessorKey: "sku",
+      id: "sku",
       enableSorting: true,
       cell: ({ getValue }) => (
-        <span className="pl-sku">{getValue() as string}</span>
+        <span className="pl-sku" title={getValue() as string}>{getValue() as string}</span>
       )
     },
     {
-      header: "Product Name",
+      header: "Product",
       accessorKey: "name",
+      id: "name",
       enableSorting: true,
       cell: ({ row }) => (
-        <div className="pl-name-cell">
+        <div className="pl-name-cell" title={`${row.original.name}\n${row.original.description || ""}`}>
           <div className="pl-product-icon"><FaBoxOpen /></div>
-          <div>
+          <div className="pl-name-content">
             <div className="pl-name">{row.original.name}</div>
-            <div className="pl-desc">{row.original.description}</div>
+            {row.original.description && (
+              <div className="pl-desc">{row.original.description}</div>
+            )}
           </div>
         </div>
       )
     },
     {
-      header: "Price Range",
+      header: "Price",
       id: "price",
       enableSorting: true,
       accessorFn: (row) => minPrice(row),
@@ -162,7 +172,7 @@ const ProductList: React.FC = () => {
         const count = row.original.productVariants?.length ?? 0;
         return (
           <span className="pl-variants">
-            {count} {count === 1 ? "variant" : "variants"}
+            {count} {count === 1 ? "var" : "vars"}
           </span>
         );
       }
@@ -177,6 +187,7 @@ const ProductList: React.FC = () => {
     {
       header: "Listed On",
       accessorKey: "listedOn",
+      id: "listedOn",
       enableSorting: true,
       cell: ({ getValue }) => (
         <span className="pl-date">{formatDate(getValue() as string)}</span>
@@ -185,13 +196,14 @@ const ProductList: React.FC = () => {
     {
       header: "Listed By",
       accessorKey: "listedBy",
+      id: "listedBy",
       enableSorting: true,
       cell: ({ getValue }) => {
         const val = (getValue() as string) || "—";
         return (
-          <div className="pl-listed-by">
+          <div className="pl-listed-by" title={val}>
             <span className="pl-avatar">{val.charAt(0).toUpperCase()}</span>
-            <span>{val}</span>
+            <span className="pl-listed-by-name">{val}</span>
           </div>
         );
       }
@@ -206,6 +218,7 @@ const ProductList: React.FC = () => {
             className="pl-btn pl-btn--edit"
             onClick={() => handleEdit(row.original)}
             title="Edit product"
+            aria-label="Edit product"
           >
             <FaEdit /><span>Edit</span>
           </button>
@@ -213,8 +226,9 @@ const ProductList: React.FC = () => {
             className="pl-btn pl-btn--delete"
             onClick={() => handleDelete(row.original.productId)}
             title="Delete product"
+            aria-label="Delete product"
           >
-            <FaTrash /><span>Delete</span>
+            <FaTrash /><span>Del</span>
           </button>
         </div>
       )
@@ -343,7 +357,7 @@ const ProductList: React.FC = () => {
                       return (
                         <th
                           key={col.id}
-                          className={canSort ? "pl-th-sortable" : ""}
+                          className={`pl-col-${col.id} ${canSort ? "pl-th-sortable" : ""}`}
                           onClick={canSort ? col.column.getToggleSortingHandler() : undefined}
                           title={
                             canSort
@@ -373,11 +387,19 @@ const ProductList: React.FC = () => {
                 ) : (
                   table.getRowModel().rows.map((row) => (
                     <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const header = cell.column.columnDef.header;
+                        const label = typeof header === "string" ? header : cell.column.id;
+                        return (
+                          <td
+                            key={cell.id}
+                            className={`pl-col-${cell.column.id}`}
+                            data-label={label}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))
                 )}

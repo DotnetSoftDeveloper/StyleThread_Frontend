@@ -1,6 +1,6 @@
 import React, { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   FaBriefcase,
   FaCalendarAlt,
@@ -27,18 +27,25 @@ import {
   FaTrash,
   FaTruck,
   FaUserCheck,
-  FaUserEdit
+  FaUserEdit,
+  FaUndo,
+  FaBalanceScale,
 } from "react-icons/fa";
 import "./Profile.css";
 import profileImage from "../../Assests/people.png";
 import Loader from "../../Shared/Loader";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
-import { getCustomerOrders } from "../../Services/orderService";
+import { getCustomerOrders, cancelCustomerOrder } from "../../Services/orderService";
+import { getReturnByOrderId } from "../../Services/returnService";
 import { CustomerOrder, OrderItemDetails } from "../../Types/Interface/IOrder";
+import { ReturnResponseDto } from "../../Types/Interface/IReturn";
+import { ReturnRequestModal } from "../../Components/Returns/ReturnRequestModal";
+import { DisputeModal } from "../../Components/Returns/DisputeModal";
+import OrderTracker from "../../Components/OrderTracker/OrderTracker";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../Store/ConfigureStore";
 import { useAuth } from "../Login/useAuth";
-import { getStoredToken, clearStoredAuth } from "../../Utils/Helper/authHelpers";
+import { getStoredToken } from "../../Utils/Helper/authHelpers";
 import { clearCartList } from "../../Store/EntitySlices";
 
 interface CustomerProfile {
@@ -154,8 +161,10 @@ const getInitials = (profile: CustomerProfile | null) => {
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const dispatch = useDispatch<AppDispatch>();
-  const { role, setToken } = useAuth();
+  const { role, setToken, logout } = useAuth();
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -180,24 +189,53 @@ const Profile: React.FC = () => {
   const ordersRequestStarted = useRef(false);
   const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null);
 
+  // Return and Dispute States
+  const [orderReturn, setOrderReturn] = useState<ReturnResponseDto | null>(null);
+  const [orderReturnLoading, setOrderReturnLoading] = useState<boolean>(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState<boolean>(false);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState<boolean>(false);
+
   const token = useMemo(() => getStoredToken(), []);
+
+  useEffect(() => {
+    if (!selectedOrder) {
+      setOrderReturn(null);
+      return;
+    }
+    let isMounted = true;
+    setOrderReturnLoading(true);
+    getReturnByOrderId(selectedOrder.orderId, token)
+      .then((ret) => {
+        if (isMounted) setOrderReturn(ret);
+      })
+      .catch(() => {
+        if (isMounted) setOrderReturn(null);
+      })
+      .finally(() => {
+        if (isMounted) setOrderReturnLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedOrder, token]);
   const fullName = `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim() || profile?.userName || "Style Thread Customer";
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
   // Handle Logout
   const handleLogout = () => {
-    clearStoredAuth();
+    logout();
     sessionStorage.removeItem("hasSeenLoginModal");
     setToken(null);
     dispatch(clearCartList());
-    navigate("/home");
+    navigate(`/store/${currentStoreSlug}`);
     showToast("success", "You have been logged out.");
   };
 
   // Fetch initial profile
   useEffect(() => {
     if (!token) {
-      navigate("/signin");
+      navigate(`/store/${currentStoreSlug}/signin`);
       return;
     }
 
@@ -313,6 +351,30 @@ const Profile: React.FC = () => {
       fetchOrders();
     }
   }, [token, ordersLoaded, fetchOrders]);
+
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  const canCancelOrder = (order: CustomerOrder) => {
+    const s = (order.status || "").toLowerCase();
+    return s === "paid" || s === "placed" || s === "pending" || s === "processing";
+  };
+
+  const handleCancelCustomerOrder = async (orderId: number) => {
+    const reason = window.prompt("Please enter a reason for cancelling this order (optional):");
+    if (reason === null) return;
+
+    setCancellingOrder(true);
+    try {
+      const updated = await cancelCustomerOrder(orderId, reason || "Cancelled by customer", token);
+      showToast("success", `Order #${orderId} was successfully cancelled and stock restored.`);
+      setSelectedOrder(updated);
+      fetchOrders(true);
+    } catch {
+      showToast("error", "Failed to cancel order. Please contact customer support.");
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -1191,7 +1253,7 @@ const Profile: React.FC = () => {
   // ================= TAB 3: ORDERS =================
   const getStatusBadgeClass = (status?: string) => {
     const s = (status || "").toLowerCase();
-    if (s.includes("delivered") || s.includes("paid") || s.includes("success")) {
+    if (s.includes("delivered")) {
       return "profile-status-badge--success";
     }
     if (s.includes("shipped") || s.includes("dispatch") || s.includes("transit")) {
@@ -1200,7 +1262,10 @@ const Profile: React.FC = () => {
     if (s.includes("cancel") || s.includes("fail") || s.includes("refund")) {
       return "profile-status-badge--danger";
     }
-    return "profile-status-badge--warning";
+    if (s.includes("processing")) {
+      return "profile-status-badge--warning";
+    }
+    return "profile-status-badge--info";
   };
 
   const renderOrderItem = (item: OrderItemDetails, index: number) => (
@@ -1363,6 +1428,156 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="profile-order-modal__body">
+            {/* Visual Delivery Stepper */}
+            <OrderTracker
+              orderId={order.orderId}
+              initialStatus={order.status}
+              courier={order.courier}
+              trackingNumber={order.trackingNumber}
+              cancellationReason={order.cancellationReason}
+            />
+
+            {/* Return & Dispute Section */}
+            {orderReturnLoading ? (
+              <div style={{ padding: "0.75rem", textAlign: "center", color: "#64748b", fontSize: "0.85rem" }}>
+                <FaSyncAlt className="spin" style={{ marginRight: "0.5rem" }} /> Checking return and dispute status...
+              </div>
+            ) : orderReturn ? (
+              <div className="profile-return-card">
+                <div className="profile-return-card__header">
+                  <div>
+                    <div className="profile-return-card__tag">
+                      <FaUndo />
+                      <span>RETURN #{orderReturn.returnRequestId}</span>
+                    </div>
+                    <h4 className="profile-return-card__title">
+                      {orderReturn.returnType === "Exchange" ? "Size Exchange Request" : "Return & Refund Request"}
+                    </h4>
+                    <span className="profile-return-card__date">
+                      Requested on {new Date(orderReturn.requestedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className={`profile-status-badge profile-return-badge--${orderReturn.status.toLowerCase()}`}>
+                    <span className="status-dot" />
+                    <span>{orderReturn.status}</span>
+                  </div>
+                </div>
+
+                <div className="profile-return-card__body">
+                  <div className="profile-return-card__row">
+                    <span className="label">Items Requested:</span>
+                    <span className="value">
+                      {orderReturn.items.map((it) => `${it.productName} (x${it.quantity})`).join(", ")}
+                    </span>
+                  </div>
+                  <div className="profile-return-card__row">
+                    <span className="label">Reported Reason:</span>
+                    <span className="value">{orderReturn.reason}</span>
+                  </div>
+                  {orderReturn.customerNotes && (
+                    <div className="profile-return-card__row">
+                      <span className="label">Your Notes:</span>
+                      <span className="value">{orderReturn.customerNotes}</span>
+                    </div>
+                  )}
+                  {orderReturn.exchangeSizeRequested && (
+                    <div className="profile-return-card__row">
+                      <span className="label">Requested Exchange Size:</span>
+                      <span className="value">
+                        <strong style={{ color: "#2563eb" }}>{orderReturn.exchangeSizeRequested}</strong>
+                      </span>
+                    </div>
+                  )}
+                  <div className="profile-return-card__row">
+                    <span className="label">Refund Value:</span>
+                    <strong className="value" style={{ color: "#059669" }}>
+                      ₹{orderReturn.refundAmount.toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                  {orderReturn.merchantNotes && (
+                    <div className="profile-return-card__merchant-note">
+                      <strong>Merchant Response:</strong> {orderReturn.merchantNotes}
+                    </div>
+                  )}
+
+                  {orderReturn.status === "Refunded" && (
+                    <div className="profile-return-card__alert profile-return-card__alert--success">
+                      <FaCheckCircle />
+                      <div>
+                        <strong>Refund Processed Successfully!</strong>
+                        <p>Funds returned to original payment source. Reference: {orderReturn.refundTransactionId || "N/A"}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {orderReturn.status === "Rejected" && (
+                    <div className="profile-return-card__alert profile-return-card__alert--danger">
+                      <FaTimes />
+                      <div style={{ flex: 1 }}>
+                        <strong>Return Request Rejected by Seller</strong>
+                        <p>If you believe this decision was incorrect or unfair, you can escalate this to Style Thread administrators for independent platform arbitration.</p>
+                        <button
+                          type="button"
+                          className="profile-btn profile-btn--primary"
+                          style={{
+                            marginTop: "0.5rem",
+                            backgroundColor: "#d97706",
+                            borderColor: "#b45309",
+                            fontSize: "0.8rem",
+                            padding: "0.4rem 0.8rem",
+                          }}
+                          onClick={() => setIsDisputeModalOpen(true)}
+                        >
+                          <FaBalanceScale />
+                          <span>Escalate Dispute to Platform Admin</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {orderReturn.status === "Disputed" && (
+                    <div className="profile-return-card__alert profile-return-card__alert--warning">
+                      <FaBalanceScale />
+                      <div>
+                        <strong>Platform Dispute in Progress</strong>
+                        <p>Our platform dispute arbitration team is reviewing your case and seller comments. You will receive an email once a final determination is reached.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {orderReturn.status === "DisputeResolved" && (
+                    <div className="profile-return-card__alert profile-return-card__alert--info">
+                      <FaCheckCircle />
+                      <div>
+                        <strong>Dispute Arbitrated by Platform Admins</strong>
+                        <p>Admin Notes: {orderReturn.adminNotes || "Case resolved."}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : order.status?.toLowerCase() === "delivered" ? (
+              <div className="profile-return-banner">
+                <div className="profile-return-banner__info">
+                  <FaUndo className="profile-return-banner__icon" />
+                  <div>
+                    <strong>15-Day Hassle-Free Returns & Exchanges</strong>
+                    <p>Not satisfied with the fit or quality? Return items within 15 days of delivery for a full refund or size exchange.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="profile-btn profile-btn--secondary"
+                  style={{ color: "#2563eb", borderColor: "#93c5fd", backgroundColor: "#ffffff" }}
+                  onClick={() => setIsReturnModalOpen(true)}
+                >
+                  <FaUndo />
+                  <span>Request Return / Exchange</span>
+                </button>
+              </div>
+            ) : null}
+
             {/* Items List */}
             <div className="profile-order-modal__section">
               <h4 className="profile-order-modal__section-title">
@@ -1413,6 +1628,12 @@ const Profile: React.FC = () => {
                   <span>Items Subtotal</span>
                   <span>{formatCurrency(calculatedSubtotal)}</span>
                 </div>
+                {order.discount && order.discount > 0 ? (
+                  <div className="breakdown-row" style={{ color: "#059669", fontWeight: 600 }}>
+                    <span>Coupon Savings {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                    <span>-{formatCurrency(order.discount)}</span>
+                  </div>
+                ) : null}
                 <div className="breakdown-row">
                   <span>Shipping & Delivery Fee</span>
                   <span>{shipping > 0 ? formatCurrency(shipping) : <strong className="free-text">FREE</strong>}</span>
@@ -1433,6 +1654,28 @@ const Profile: React.FC = () => {
 
           {/* Modal Footer */}
           <div className="profile-order-modal__footer">
+            {canCancelOrder(order) && (
+              <button
+                type="button"
+                className="profile-btn profile-btn--secondary"
+                style={{ color: "#dc2626", borderColor: "#fecaca" }}
+                onClick={() => handleCancelCustomerOrder(order.orderId)}
+                disabled={cancellingOrder}
+              >
+                {cancellingOrder ? "Cancelling..." : "Cancel Order"}
+              </button>
+            )}
+            {order.status?.toLowerCase() === "delivered" && !orderReturn && (
+              <button
+                type="button"
+                className="profile-btn profile-btn--secondary"
+                style={{ color: "#2563eb", borderColor: "#bfdbfe" }}
+                onClick={() => setIsReturnModalOpen(true)}
+              >
+                <FaUndo aria-hidden="true" />
+                <span>Return / Exchange</span>
+              </button>
+            )}
             <button
               type="button"
               className="profile-btn profile-btn--secondary"
@@ -1441,7 +1684,7 @@ const Profile: React.FC = () => {
               Close
             </button>
             <Link
-              to="/home"
+              to={`/store/${currentStoreSlug}`}
               className="profile-btn profile-btn--primary"
               onClick={() => setSelectedOrder(null)}
             >
@@ -1491,13 +1734,37 @@ const Profile: React.FC = () => {
           </div>
           <h3>No Orders Yet</h3>
           <p>You haven't placed any orders yet. Discover our latest collections and start shopping today.</p>
-          <Link to="/home" className="profile-btn profile-btn--primary">
+          <Link to={`/store/${currentStoreSlug}`} className="profile-btn profile-btn--primary">
             Explore Products
           </Link>
         </div>
       )}
 
       {selectedOrder && renderOrderDetailsModal(selectedOrder)}
+
+      {isReturnModalOpen && selectedOrder && (
+        <ReturnRequestModal
+          order={selectedOrder}
+          onClose={() => setIsReturnModalOpen(false)}
+          onSuccess={(ret) => {
+            setOrderReturn(ret);
+            setIsReturnModalOpen(false);
+            showToast("success", "Return request submitted successfully!");
+          }}
+        />
+      )}
+
+      {isDisputeModalOpen && orderReturn && (
+        <DisputeModal
+          returnRequest={orderReturn}
+          onClose={() => setIsDisputeModalOpen(false)}
+          onSuccess={(updated) => {
+            setOrderReturn(updated);
+            setIsDisputeModalOpen(false);
+            showToast("success", "Dispute escalated to platform administrators.");
+          }}
+        />
+      )}
     </div>
   );
 
@@ -1522,7 +1789,7 @@ const Profile: React.FC = () => {
           <button
             type="button"
             className="profile-btn profile-btn--primary"
-            onClick={() => navigate("/signin")}
+            onClick={() => navigate(`/store/${currentStoreSlug}/signin`)}
           >
             Sign In Again
           </button>

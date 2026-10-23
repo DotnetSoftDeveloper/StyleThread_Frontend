@@ -9,6 +9,14 @@ import {
   submitStoreRequest,
   approveStoreRequest,
   rejectStoreRequest,
+  requestStoreInformation,
+  assignStoreAdmin,
+  getEligibleAdmins,
+  getTenantMemberships,
+  assignTenantRole,
+  revokeTenantRole,
+  getTenantAuditLogs,
+  getAllAuditLogs,
 } from "../../Services/tenantService";
 import {
   Tenant,
@@ -17,6 +25,9 @@ import {
   StoreRequest,
   CreateStoreRequestDto,
   StoreRequestStatus,
+  EligibleAdminDto,
+  TenantMembership,
+  TenantAuditLogDto,
 } from "../../Types/Interface/ITenant";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import {
@@ -35,23 +46,48 @@ import {
   FaCheck,
   FaClock,
   FaBan,
+  FaUsers,
+  FaUserPlus,
+  FaUserShield,
+  FaHistory,
+  FaTrash,
+  FaExclamationTriangle,
+  FaUserCog,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 export const StoreSettings: React.FC = () => {
   const { tenant, settings, activeSlug, switchTenant, updateSettings } = useTenant();
-  const { role } = useAuth();
+  const { role, tenantRole } = useAuth();
   const { showToast } = useToast();
 
   const isSuperAdmin = role === "SuperAdministrator";
   const isPlatformAdmin = role === "Administrator";
+  const isStoreAdmin = role === "StoreAdmin" || tenantRole === "StoreAdmin";
+  const canManageMembers = isSuperAdmin || isStoreAdmin;
 
   const [allTenants, setAllTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<
-    "branding" | "identity" | "hero" | "policies" | "requests"
+    "branding" | "identity" | "hero" | "policies" | "requests" | "memberships" | "audit"
   >("branding");
+
+  // Store Memberships state
+  const [memberships, setMemberships] = useState<TenantMembership[]>([]);
+  const [loadingMemberships, setLoadingMemberships] = useState<boolean>(false);
+  const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+  const [assigningRole, setAssigningRole] = useState<boolean>(false);
+  const [newMembership, setNewMembership] = useState<{ email: string; role: string }>({
+    email: "",
+    role: "StoreSeller",
+  });
+  const [revokingId, setRevokingId] = useState<number | null>(null);
+
+  // Audit Logs state
+  const [auditLogs, setAuditLogs] = useState<TenantAuditLogDto[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState<boolean>(false);
 
   // Onboard new tenant modal state (Super Admin direct creation)
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
@@ -71,11 +107,15 @@ export const StoreSettings: React.FC = () => {
   const [showRequestModal, setShowRequestModal] = useState<boolean>(false);
   const [submittingRequest, setSubmittingRequest] = useState<boolean>(false);
   const [newRequestData, setNewRequestData] = useState<CreateStoreRequestDto>({
+    businessName: "",
+    businessCategory: "Fashion & Apparel",
     storeName: "",
     desiredSlug: "",
     businessDescription: "",
     contactEmail: "",
     contactPhone: "",
+    ownerFirstName: "",
+    ownerLastName: "",
   });
   const [reviewModal, setReviewModal] = useState<{
     open: boolean;
@@ -89,6 +129,69 @@ export const StoreSettings: React.FC = () => {
     notes: "",
   });
   const [reviewing, setReviewing] = useState<boolean>(false);
+
+  // Enhanced Store Requests Filter & Admin Assignment State
+  const [requestStatusFilter, setRequestStatusFilter] = useState<string>("ALL");
+  const [requestSearchTerm, setRequestSearchTerm] = useState<string>("");
+  const [eligibleAdmins, setEligibleAdmins] = useState<EligibleAdminDto[]>([]);
+  const [loadingEligibleAdmins, setLoadingEligibleAdmins] = useState<boolean>(false);
+
+  // Request Information Modal
+  const [infoModal, setInfoModal] = useState<{
+    open: boolean;
+    request: StoreRequest | null;
+    inquiryNotes: string;
+    adminNotes: string;
+  }>({
+    open: false,
+    request: null,
+    inquiryNotes: "",
+    adminNotes: "",
+  });
+
+  // Assign Admin Modal (for standalone admin assignment to approved stores)
+  const [assignAdminModal, setAssignAdminModal] = useState<{
+    open: boolean;
+    request: StoreRequest | null;
+    mode: "existing" | "new";
+    selectedUserId: number | "";
+    newAdminEmail: string;
+    newAdminFirstName: string;
+    newAdminLastName: string;
+    newAdminPassword: string;
+  }>({
+    open: false,
+    request: null,
+    mode: "existing",
+    selectedUserId: "",
+    newAdminEmail: "",
+    newAdminFirstName: "",
+    newAdminLastName: "",
+    newAdminPassword: "StoreAdmin@123!",
+  });
+
+  // Comprehensive Approve & Provision Modal
+  const [approveModal, setApproveModal] = useState<{
+    open: boolean;
+    request: StoreRequest | null;
+    adminNotes: string;
+    assignMode: "applicant" | "existing" | "new" | "defer";
+    selectedUserId: number | "";
+    newAdminEmail: string;
+    newAdminFirstName: string;
+    newAdminLastName: string;
+    newAdminPassword: string;
+  }>({
+    open: false,
+    request: null,
+    adminNotes: "Approved by Super Administrator. Turnkey storefront provisioned.",
+    assignMode: "applicant",
+    selectedUserId: "",
+    newAdminEmail: "",
+    newAdminFirstName: "",
+    newAdminLastName: "",
+    newAdminPassword: "StoreAdmin@123!",
+  });
 
   // Settings form state
   const [formData, setFormData] = useState<UpdateTenantSettingsRequest>({
@@ -240,6 +343,41 @@ export const StoreSettings: React.FC = () => {
     (r) => r.status === StoreRequestStatus.Pending || (r as any).status === 1
   ).length;
 
+  const filteredRequests = storeRequests.filter((req) => {
+    if (requestStatusFilter !== "ALL") {
+      const statusNum =
+        requestStatusFilter === "PENDING" ? 1 :
+        requestStatusFilter === "INFO_REQUIRED" ? 4 :
+        requestStatusFilter === "UNDER_REVIEW" ? 5 :
+        requestStatusFilter === "APPROVED" ? 2 :
+        requestStatusFilter === "REJECTED" ? 3 : -1;
+
+      const reqStatusNum = typeof req.status === "number" ? req.status :
+        req.status === StoreRequestStatus.Pending ? 1 :
+        req.status === StoreRequestStatus.Approved ? 2 :
+        req.status === StoreRequestStatus.Rejected ? 3 :
+        req.status === StoreRequestStatus.InformationRequired ? 4 :
+        req.status === StoreRequestStatus.UnderReview ? 5 : -1;
+
+      if (reqStatusNum !== statusNum) return false;
+    }
+
+    if (requestSearchTerm.trim()) {
+      const q = requestSearchTerm.toLowerCase();
+      const refMatch = req.referenceNumber?.toLowerCase().includes(q);
+      const nameMatch = req.storeName?.toLowerCase().includes(q);
+      const bizMatch = req.businessName?.toLowerCase().includes(q);
+      const slugMatch = req.desiredSlug?.toLowerCase().includes(q);
+      const emailMatch = (req.contactEmail || req.requesterEmail)?.toLowerCase().includes(q);
+      const ownerMatch = `${req.ownerFirstName || ""} ${req.ownerLastName || ""}`.toLowerCase().includes(q);
+      if (!refMatch && !nameMatch && !bizMatch && !slugMatch && !emailMatch && !ownerMatch) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   const handleRequestDataChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -281,11 +419,15 @@ export const StoreSettings: React.FC = () => {
       showToast("success", `Store request for "${created.storeName}" submitted successfully!`);
       setShowRequestModal(false);
       setNewRequestData({
+        businessName: "",
+        businessCategory: "Fashion & Apparel",
         storeName: "",
         desiredSlug: "",
         businessDescription: "",
         contactEmail: "",
         contactPhone: "",
+        ownerFirstName: "",
+        ownerLastName: "",
       });
       await fetchRequests();
       setActiveTab("requests");
@@ -334,6 +476,168 @@ export const StoreSettings: React.FC = () => {
     }
   };
 
+  const fetchEligibleAdminsList = async () => {
+    if (!isSuperAdmin) return;
+    try {
+      setLoadingEligibleAdmins(true);
+      const list = await getEligibleAdmins();
+      setEligibleAdmins(list);
+    } catch (err) {
+      console.warn("Could not fetch eligible admins:", err);
+    } finally {
+      setLoadingEligibleAdmins(false);
+    }
+  };
+
+  const handleRequestInfoSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!infoModal.request) return;
+    if (!infoModal.inquiryNotes.trim()) {
+      showToast("warning", "Please provide inquiry notes detailing the needed info.");
+      return;
+    }
+
+    try {
+      setReviewing(true);
+      await requestStoreInformation(
+        infoModal.request.storeRequestId,
+        infoModal.inquiryNotes,
+        infoModal.adminNotes
+      );
+      showToast(
+        "info",
+        `Requested additional info for application #${infoModal.request.referenceNumber || infoModal.request.storeRequestId}.`
+      );
+      setInfoModal({ open: false, request: null, inquiryNotes: "", adminNotes: "" });
+      await fetchRequests();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to request information";
+      showToast("error", msg);
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleApproveAndAssignSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!approveModal.request) return;
+
+    try {
+      setReviewing(true);
+      const req = approveModal.request;
+      const reviewPayload: any = {
+        adminNotes: approveModal.adminNotes,
+        notes: approveModal.adminNotes,
+      };
+
+      if (approveModal.assignMode === "applicant") {
+        if (req.requesterUserId && req.requesterUserId > 0) {
+          reviewPayload.assignAdminUserId = req.requesterUserId;
+        } else {
+          reviewPayload.createNewAdmin = true;
+          reviewPayload.adminEmail = req.contactEmail;
+          reviewPayload.adminFirstName = req.ownerFirstName || "Store";
+          reviewPayload.adminLastName = req.ownerLastName || "Owner";
+          reviewPayload.adminPassword = "StoreAdmin@123!";
+        }
+      } else if (approveModal.assignMode === "existing") {
+        if (!approveModal.selectedUserId) {
+          showToast("warning", "Please select an existing platform user to assign as admin.");
+          setReviewing(false);
+          return;
+        }
+        reviewPayload.assignAdminUserId = Number(approveModal.selectedUserId);
+      } else if (approveModal.assignMode === "new") {
+        if (!approveModal.newAdminEmail || !approveModal.newAdminPassword) {
+          showToast("warning", "Please provide email and password for the new admin account.");
+          setReviewing(false);
+          return;
+        }
+        reviewPayload.createNewAdmin = true;
+        reviewPayload.adminEmail = approveModal.newAdminEmail;
+        reviewPayload.adminFirstName = approveModal.newAdminFirstName || req.ownerFirstName;
+        reviewPayload.adminLastName = approveModal.newAdminLastName || req.ownerLastName;
+        reviewPayload.adminPassword = approveModal.newAdminPassword;
+      }
+      // "defer": leaves store as SetupPending
+
+      await approveStoreRequest(req.storeRequestId, reviewPayload);
+      showToast("success", `Store "${req.storeName}" has been approved!`);
+      const updatedTenants = await getAllTenants();
+      setAllTenants(updatedTenants);
+      setApproveModal({
+        open: false,
+        request: null,
+        adminNotes: "",
+        assignMode: "applicant",
+        selectedUserId: "",
+        newAdminEmail: "",
+        newAdminFirstName: "",
+        newAdminLastName: "",
+        newAdminPassword: "StoreAdmin@123!",
+      });
+      await fetchRequests();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to approve store request";
+      showToast("error", msg);
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleAssignAdminSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!assignAdminModal.request) return;
+
+    try {
+      setReviewing(true);
+      const req = assignAdminModal.request;
+      let payload: any = {};
+      if (assignAdminModal.mode === "existing") {
+        if (!assignAdminModal.selectedUserId) {
+          showToast("warning", "Please select an administrator user.");
+          setReviewing(false);
+          return;
+        }
+        payload = { userId: Number(assignAdminModal.selectedUserId) };
+      } else {
+        if (!assignAdminModal.newAdminEmail || !assignAdminModal.newAdminPassword) {
+          showToast("warning", "Please enter new admin email and password.");
+          setReviewing(false);
+          return;
+        }
+        payload = {
+          createNew: true,
+          email: assignAdminModal.newAdminEmail,
+          firstName: assignAdminModal.newAdminFirstName || req.ownerFirstName,
+          lastName: assignAdminModal.newAdminLastName || req.ownerLastName,
+          password: assignAdminModal.newAdminPassword,
+        };
+      }
+
+      await assignStoreAdmin(req.storeRequestId, payload);
+      showToast("success", `StoreAdmin successfully assigned to "${req.storeName}"! Storefront is now Active.`);
+      const updatedTenants = await getAllTenants();
+      setAllTenants(updatedTenants);
+      setAssignAdminModal({
+        open: false,
+        request: null,
+        mode: "existing",
+        selectedUserId: "",
+        newAdminEmail: "",
+        newAdminFirstName: "",
+        newAdminLastName: "",
+        newAdminPassword: "StoreAdmin@123!",
+      });
+      await fetchRequests();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to assign admin";
+      showToast("error", msg);
+    } finally {
+      setReviewing(false);
+    }
+  };
+
   const handleTenantSwitch = async (slug: string) => {
     if (slug === activeSlug) return;
     try {
@@ -341,6 +645,103 @@ export const StoreSettings: React.FC = () => {
       showToast("info", `Switched active storefront to: ${slug}`);
     } catch (err) {
       showToast("error", `Could not switch to store "${slug}"`);
+    }
+  };
+
+  const fetchMemberships = async () => {
+    if (!tenant?.tenantId) return;
+    try {
+      setLoadingMemberships(true);
+      const list = await getTenantMemberships(tenant.tenantId);
+      setMemberships(list);
+    } catch (err: unknown) {
+      console.warn("Could not fetch memberships:", err);
+    } finally {
+      setLoadingMemberships(false);
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      setLoadingAuditLogs(true);
+      if (isSuperAdmin && activeSlug === "default") {
+        const list = await getAllAuditLogs();
+        setAuditLogs(list);
+      } else if (tenant?.tenantId) {
+        const list = await getTenantAuditLogs(tenant.tenantId);
+        setAuditLogs(list);
+      }
+    } catch (err: unknown) {
+      console.warn("Could not fetch audit logs:", err);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "requests") {
+      fetchRequests();
+      if (isSuperAdmin) {
+        fetchEligibleAdminsList();
+      }
+    } else if (activeTab === "memberships") {
+      fetchMemberships();
+    } else if (activeTab === "audit") {
+      fetchAuditLogs();
+    }
+  }, [activeTab, tenant?.tenantId, activeSlug, isSuperAdmin]);
+
+  const handleAssignRole = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!tenant?.tenantId || !newMembership.email.trim()) {
+      showToast("warning", "Please provide a valid user email.");
+      return;
+    }
+
+    try {
+      setAssigningRole(true);
+      const res = await assignTenantRole(tenant.tenantId, {
+        email: newMembership.email.trim(),
+        role: newMembership.role,
+      });
+      showToast(
+        "success",
+        `Role "${res.role}" assigned to "${res.email}" for store "${tenant.storeName}"!`
+      );
+      setShowAssignModal(false);
+      setNewMembership({ email: "", role: "StoreSeller" });
+      await fetchMemberships();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to assign role";
+      showToast("error", msg);
+    } finally {
+      setAssigningRole(false);
+    }
+  };
+
+  const handleRevokeRole = async (userId: number, roleToRevoke: string, email: string) => {
+    if (!tenant?.tenantId) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to revoke the "${roleToRevoke}" role from ${email}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setRevokingId(userId);
+      const res = await revokeTenantRole(tenant.tenantId, {
+        userId,
+        role: roleToRevoke,
+      });
+      showToast("info", res.message || `Role revoked from ${email}.`);
+      await fetchMemberships();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to revoke role";
+      showToast("error", msg);
+    } finally {
+      setRevokingId(null);
     }
   };
 
@@ -405,7 +806,7 @@ export const StoreSettings: React.FC = () => {
           )}
 
           <Link
-            to={`/home?tenant=${activeSlug}`}
+            to={`/store/${activeSlug || "default"}`}
             target="_blank"
             className="store-settings-btn store-settings-btn--preview"
           >
@@ -461,6 +862,26 @@ export const StoreSettings: React.FC = () => {
               <span className="requests-count-badge">{pendingRequestsCount}</span>
             )}
           </button>
+          {canManageMembers && (
+            <button
+              type="button"
+              className={`store-settings-nav__item ${activeTab === "memberships" ? "active" : ""}`}
+              onClick={() => setActiveTab("memberships")}
+            >
+              <FaUsers />
+              <span>Store Members</span>
+            </button>
+          )}
+          {(isSuperAdmin || canManageMembers) && (
+            <button
+              type="button"
+              className={`store-settings-nav__item ${activeTab === "audit" ? "active" : ""}`}
+              onClick={() => setActiveTab("audit")}
+            >
+              <FaHistory />
+              <span>Security & Audit</span>
+            </button>
+          )}
         </nav>
 
         {/* Settings Form Body */}
@@ -912,7 +1333,7 @@ export const StoreSettings: React.FC = () => {
                   </h2>
                   <p>
                     {isSuperAdmin
-                      ? "Review and approve store onboarding applications submitted by Platform Administrators."
+                      ? "Review, clarify, approve, and assign store administrators for merchant storefront applications."
                       : "Track your applications to launch new stores. Super Administrators review and provision your requests."}
                   </p>
                 </div>
@@ -927,6 +1348,68 @@ export const StoreSettings: React.FC = () => {
                 )}
               </div>
 
+              {/* Status Filter Pills & Search Bar */}
+              <div className="requests-filter-bar">
+                <div className="requests-filter-pills">
+                  {[
+                    { id: "ALL", label: "All Applications", count: storeRequests.length },
+                    {
+                      id: "PENDING",
+                      label: "Pending",
+                      count: storeRequests.filter(
+                        (r) => r.status === StoreRequestStatus.Pending || (r as any).status === 1
+                      ).length,
+                    },
+                    {
+                      id: "INFO_REQUIRED",
+                      label: "Info Required",
+                      count: storeRequests.filter(
+                        (r) => r.status === StoreRequestStatus.InformationRequired || (r as any).status === 4
+                      ).length,
+                    },
+                    {
+                      id: "UNDER_REVIEW",
+                      label: "Under Review",
+                      count: storeRequests.filter(
+                        (r) => r.status === StoreRequestStatus.UnderReview || (r as any).status === 5
+                      ).length,
+                    },
+                    {
+                      id: "APPROVED",
+                      label: "Approved",
+                      count: storeRequests.filter(
+                        (r) => r.status === StoreRequestStatus.Approved || (r as any).status === 2
+                      ).length,
+                    },
+                    {
+                      id: "REJECTED",
+                      label: "Rejected",
+                      count: storeRequests.filter(
+                        (r) => r.status === StoreRequestStatus.Rejected || (r as any).status === 3
+                      ).length,
+                    },
+                  ].map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={`filter-pill-btn ${requestStatusFilter === filter.id ? "active" : ""}`}
+                      onClick={() => setRequestStatusFilter(filter.id)}
+                    >
+                      {filter.label} ({filter.count})
+                    </button>
+                  ))}
+                </div>
+
+                <div className="requests-search-box">
+                  <input
+                    type="text"
+                    placeholder="Search by ref #, store, name, or email..."
+                    value={requestSearchTerm}
+                    onChange={(e) => setRequestSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="requests-container">
                 {loadingRequests ? (
                   <div className="requests-empty-state">
@@ -936,7 +1419,7 @@ export const StoreSettings: React.FC = () => {
                     />
                     <p>Loading store requests...</p>
                   </div>
-                ) : storeRequests.length === 0 ? (
+                ) : filteredRequests.length === 0 ? (
                   <div className="requests-empty-state">
                     <FaClipboardList
                       style={{
@@ -947,7 +1430,9 @@ export const StoreSettings: React.FC = () => {
                     />
                     <h3>No Store Requests Found</h3>
                     <p>
-                      {isSuperAdmin
+                      {requestSearchTerm || requestStatusFilter !== "ALL"
+                        ? "No applications match your search or filter criteria."
+                        : isSuperAdmin
                         ? "There are no pending or reviewed store requests at this time."
                         : "You haven't submitted any store access requests yet."}
                     </p>
@@ -963,10 +1448,16 @@ export const StoreSettings: React.FC = () => {
                   </div>
                 ) : (
                   <div className="requests-list">
-                    {storeRequests.map((req) => {
+                    {filteredRequests.map((req) => {
                       const isPending =
                         req.status === StoreRequestStatus.Pending ||
                         (req as any).status === 1;
+                      const isInfoRequired =
+                        req.status === StoreRequestStatus.InformationRequired ||
+                        (req as any).status === 4;
+                      const isUnderReview =
+                        req.status === StoreRequestStatus.UnderReview ||
+                        (req as any).status === 5;
                       const isApproved =
                         req.status === StoreRequestStatus.Approved ||
                         (req as any).status === 2;
@@ -978,34 +1469,64 @@ export const StoreSettings: React.FC = () => {
                         <div key={req.storeRequestId} className="request-card">
                           <div className="request-card__header">
                             <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.35rem" }}>
+                                {req.referenceNumber && (
+                                  <span
+                                    style={{
+                                      fontFamily: "monospace",
+                                      fontWeight: 700,
+                                      fontSize: "0.85rem",
+                                      background: "#0f172a",
+                                      color: "#ffffff",
+                                      padding: "0.2rem 0.55rem",
+                                      borderRadius: "4px",
+                                      letterSpacing: "0.05em",
+                                    }}
+                                  >
+                                    {req.referenceNumber}
+                                  </span>
+                                )}
+                                <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                                  Submitted {new Date(req.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
                               <h3 className="request-card__title">
                                 {req.storeName}
                                 <span className="request-card__slug">
-                                  ?tenant={req.desiredSlug}
+                                  /store/{req.desiredSlug}
                                 </span>
                               </h3>
-                              <div className="request-card__meta">
+                              <div className="request-card__meta" style={{ marginTop: "0.3rem" }}>
                                 <span>
-                                  Requester: <strong>{req.requesterEmail}</strong>
+                                  Applicant: <strong>{req.ownerFirstName} {req.ownerLastName}</strong> ({req.contactEmail || req.requesterEmail})
                                 </span>
-                                <span>
-                                  Submitted:{" "}
-                                  {new Date(req.createdAt).toLocaleDateString()}
-                                </span>
+                                {req.businessName && (
+                                  <span>
+                                    Legal Entity: <strong>{req.businessName}</strong>
+                                  </span>
+                                )}
                               </div>
                             </div>
+
                             <div>
                               {isPending && (
                                 <span className="status-badge status-badge--pending">
                                   <FaClock /> Pending Review
                                 </span>
                               )}
+                              {isUnderReview && (
+                                <span className="status-badge status-badge--under-review">
+                                  <FaHistory /> Under Review (Resubmitted)
+                                </span>
+                              )}
+                              {isInfoRequired && (
+                                <span className="status-badge status-badge--info-required">
+                                  <FaExclamationTriangle /> Info Required
+                                </span>
+                              )}
                               {isApproved && (
                                 <span className="status-badge status-badge--approved">
-                                  <FaCheck /> Approved{" "}
-                                  {req.createdTenantId
-                                    ? `(Tenant #${req.createdTenantId})`
-                                    : ""}
+                                  <FaCheck /> Approved {req.assignedAdminUserId ? "(Active)" : "(Awaiting Admin)"}
                                 </span>
                               )}
                               {isRejected && (
@@ -1027,10 +1548,18 @@ export const StoreSettings: React.FC = () => {
                           <div className="request-card__details">
                             <div className="request-detail-item">
                               <span className="request-detail-item__label">
-                                Contact Email
+                                Category & Scale
                               </span>
                               <span className="request-detail-item__value">
-                                {req.contactEmail || req.requesterEmail}
+                                {req.businessCategory || "General Retail"} • {req.estimatedInventoryScale || "Standard"}
+                              </span>
+                            </div>
+                            <div className="request-detail-item">
+                              <span className="request-detail-item__label">
+                                Tax ID / Reg Number
+                              </span>
+                              <span className="request-detail-item__value">
+                                {req.taxIdOrRegistrationNumber || "Not provided"}
                               </span>
                             </div>
                             <div className="request-detail-item">
@@ -1043,56 +1572,249 @@ export const StoreSettings: React.FC = () => {
                             </div>
                             <div className="request-detail-item">
                               <span className="request-detail-item__label">
-                                Reviewed On
+                                Business Address
                               </span>
                               <span className="request-detail-item__value">
-                                {req.reviewedAt
-                                  ? new Date(req.reviewedAt).toLocaleDateString()
-                                  : "Awaiting Review"}
+                                {req.businessAddress || "Not provided"}
                               </span>
                             </div>
+                            {req.websiteOrSocialUrl && (
+                              <div className="request-detail-item">
+                                <span className="request-detail-item__label">
+                                  Website / Social Link
+                                </span>
+                                <span className="request-detail-item__value">
+                                  <a
+                                    href={req.websiteOrSocialUrl.startsWith("http") ? req.websiteOrSocialUrl : `https://${req.websiteOrSocialUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: "#2563eb", textDecoration: "underline" }}
+                                  >
+                                    {req.websiteOrSocialUrl}
+                                  </a>
+                                </span>
+                              </div>
+                            )}
+                            {req.customDomain && (
+                              <div className="request-detail-item">
+                                <span className="request-detail-item__label">
+                                  Requested Custom Domain
+                                </span>
+                                <span className="request-detail-item__value">
+                                  {req.customDomain}
+                                </span>
+                              </div>
+                            )}
                           </div>
 
+                          {/* Clarification Inquiry Notes Banner */}
+                          {req.inquiryNotes && (
+                            <div
+                              style={{
+                                background: "#fffbeb",
+                                border: "1px solid #fde68a",
+                                borderRadius: "8px",
+                                padding: "0.85rem 1rem",
+                                color: "#92400e",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                <FaQuestionCircle /> Super Admin Information Request:
+                              </div>
+                              <div>{req.inquiryNotes}</div>
+                              {req.resubmittedAt && (
+                                <div style={{ fontSize: "0.75rem", color: "#b45309", marginTop: "0.35rem" }}>
+                                  Applicant resubmitted response on {new Date(req.resubmittedAt).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Admin Notes */}
                           {req.adminNotes && (
                             <div className="request-card__notes">
                               <div className="request-card__notes-title">
-                                Admin Feedback / Review Notes:
+                                Admin Feedback / Internal Notes:
                               </div>
                               <div>{req.adminNotes}</div>
                             </div>
                           )}
 
-                          {isSuperAdmin && isPending && (
+                          {/* Rejection Reason */}
+                          {req.rejectionReason && (
+                            <div
+                              style={{
+                                background: "#fef2f2",
+                                borderLeft: "3px solid #ef4444",
+                                padding: "0.75rem 1rem",
+                                borderRadius: "0 8px 8px 0",
+                                fontSize: "0.85rem",
+                                color: "#991b1b",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, marginBottom: "0.25rem" }}>
+                                Rejection Reason:
+                              </div>
+                              <div>{req.rejectionReason}</div>
+                            </div>
+                          )}
+
+                          {/* Storefront / Tenant Info */}
+                          {req.createdTenantId && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                background: "#f0fdf4",
+                                border: "1px solid #bbf7d0",
+                                borderRadius: "8px",
+                                padding: "0.75rem 1rem",
+                                fontSize: "0.85rem",
+                                color: "#166534",
+                              }}
+                            >
+                              <div>
+                                <strong>Provisioned Tenant: #{req.createdTenantId}</strong> ({req.desiredSlug})
+                                {req.assignedAdminUserId ? (
+                                  <span style={{ marginLeft: "0.75rem", color: "#15803d" }}>
+                                    ✓ Admin Assigned (User #{req.assignedAdminUserId})
+                                  </span>
+                                ) : (
+                                  <span style={{ marginLeft: "0.75rem", color: "#b45309", fontWeight: 600 }}>
+                                    ⚠ Awaiting Admin Assignment (Setup Pending)
+                                  </span>
+                                )}
+                              </div>
+                              <Link
+                                to={`/store/${req.desiredSlug}`}
+                                target="_blank"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.35rem",
+                                  fontWeight: 600,
+                                  color: "#16a34a",
+                                }}
+                              >
+                                <span>Visit Store</span> <FaExternalLinkAlt style={{ fontSize: "0.75rem" }} />
+                              </Link>
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          {isSuperAdmin && (
                             <div className="request-card__actions">
-                              <button
-                                type="button"
-                                className="store-req-btn store-req-btn--approve"
-                                onClick={() =>
-                                  setReviewModal({
-                                    open: true,
-                                    request: req,
-                                    action: "approve",
-                                    notes:
-                                      "Approved. Store provisioned with default theme and configuration.",
-                                  })
-                                }
-                              >
-                                <FaCheck /> <span>Approve & Provision</span>
-                              </button>
-                              <button
-                                type="button"
-                                className="store-req-btn store-req-btn--reject"
-                                onClick={() =>
-                                  setReviewModal({
-                                    open: true,
-                                    request: req,
-                                    action: "reject",
-                                    notes: "",
-                                  })
-                                }
-                              >
-                                <FaBan /> <span>Reject Request</span>
-                              </button>
+                              {(isPending || isUnderReview) && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="store-req-btn store-req-btn--approve"
+                                    onClick={() => {
+                                      fetchEligibleAdminsList();
+                                      setApproveModal({
+                                        open: true,
+                                        request: req,
+                                        adminNotes: `Approved by Super Admin on ${new Date().toLocaleDateString()}. Storefront provisioned.`,
+                                        assignMode: "applicant",
+                                        selectedUserId: "",
+                                        newAdminEmail: req.contactEmail || "",
+                                        newAdminFirstName: req.ownerFirstName || "Store",
+                                        newAdminLastName: req.ownerLastName || "Owner",
+                                        newAdminPassword: "StoreAdmin@123!",
+                                      });
+                                    }}
+                                  >
+                                    <FaCheck /> <span>Approve & Assign Admin</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="store-req-btn store-req-btn--info"
+                                    onClick={() =>
+                                      setInfoModal({
+                                        open: true,
+                                        request: req,
+                                        inquiryNotes: req.inquiryNotes || "",
+                                        adminNotes: req.adminNotes || "",
+                                      })
+                                    }
+                                  >
+                                    <FaQuestionCircle /> <span>Request Information</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="store-req-btn store-req-btn--reject"
+                                    onClick={() =>
+                                      setReviewModal({
+                                        open: true,
+                                        request: req,
+                                        action: "reject",
+                                        notes: "",
+                                      })
+                                    }
+                                  >
+                                    <FaBan /> <span>Reject</span>
+                                  </button>
+                                </>
+                              )}
+
+                              {isInfoRequired && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="store-req-btn store-req-btn--info"
+                                    onClick={() =>
+                                      setInfoModal({
+                                        open: true,
+                                        request: req,
+                                        inquiryNotes: req.inquiryNotes || "",
+                                        adminNotes: req.adminNotes || "",
+                                      })
+                                    }
+                                  >
+                                    <FaQuestionCircle /> <span>Update Request Inquiry</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="store-req-btn store-req-btn--reject"
+                                    onClick={() =>
+                                      setReviewModal({
+                                        open: true,
+                                        request: req,
+                                        action: "reject",
+                                        notes: "",
+                                      })
+                                    }
+                                  >
+                                    <FaBan /> <span>Reject</span>
+                                  </button>
+                                </>
+                              )}
+
+                              {isApproved && !req.assignedAdminUserId && (
+                                <button
+                                  type="button"
+                                  className="store-req-btn store-req-btn--assign"
+                                  onClick={() => {
+                                    fetchEligibleAdminsList();
+                                    setAssignAdminModal({
+                                      open: true,
+                                      request: req,
+                                      mode: "existing",
+                                      selectedUserId: "",
+                                      newAdminEmail: req.contactEmail || "",
+                                      newAdminFirstName: req.ownerFirstName || "",
+                                      newAdminLastName: req.ownerLastName || "",
+                                      newAdminPassword: "StoreAdmin@123!",
+                                    });
+                                  }}
+                                >
+                                  <FaUserCog /> <span>Assign Store Admin & Activate</span>
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1104,8 +1826,192 @@ export const StoreSettings: React.FC = () => {
             </div>
           )}
 
+          {/* 6. Store Memberships Tab */}
+          {activeTab === "memberships" && (
+            <div className="store-settings-panel">
+              <div className="memberships-header-row">
+                <div className="store-settings-panel__header" style={{ marginBottom: 0 }}>
+                  <h2>Store Team & Access Control</h2>
+                  <p>
+                    Manage administrator, seller, and staff memberships for{" "}
+                    <strong>{tenant?.storeName || activeSlug}</strong>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="store-settings-btn store-settings-btn--secondary"
+                  onClick={() => setShowAssignModal(true)}
+                  style={{ background: "#2563eb", color: "#ffffff", border: "none" }}
+                >
+                  <FaUserPlus /> <span>Assign Store Role</span>
+                </button>
+              </div>
+
+              {loadingMemberships ? (
+                <div className="requests-loading">
+                  <FaSpinner className="spin" />
+                  <span>Loading store memberships...</span>
+                </div>
+              ) : memberships.length === 0 ? (
+                <div className="requests-empty">
+                  <FaUsers className="requests-empty__icon" />
+                  <h3>No Members Found</h3>
+                  <p>No explicit roles have been assigned to this storefront yet.</p>
+                </div>
+              ) : (
+                <div className="members-table-wrapper">
+                  <table className="members-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Store Role</th>
+                        <th>Status</th>
+                        <th>Assigned Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {memberships.map((m) => {
+                        const roleClass =
+                          m.role === "StoreAdmin"
+                            ? "role-badge--admin"
+                            : m.role === "StoreSeller"
+                            ? "role-badge--seller"
+                            : "role-badge--customer";
+
+                        return (
+                          <tr key={m.tenantUserMembershipId}>
+                            <td>
+                              <div style={{ fontWeight: 600, color: "#0f172a" }}>
+                                {m.firstName || m.lastName
+                                  ? `${m.firstName || ""} ${m.lastName || ""}`.trim()
+                                  : m.email}
+                              </div>
+                              <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                                {m.email}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`role-badge ${roleClass}`}>
+                                <FaUserShield style={{ fontSize: "0.75rem" }} />
+                                {m.role}
+                              </span>
+                            </td>
+                            <td>
+                              <span
+                                className={`status-badge ${
+                                  m.status === "Active"
+                                    ? "status-badge--approved"
+                                    : "status-badge--rejected"
+                                }`}
+                              >
+                                {m.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ fontSize: "0.85rem", color: "#475569" }}>
+                                {new Date(m.assignedAt).toLocaleDateString()}
+                              </div>
+                              {m.assignedByEmail && (
+                                <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                                  by {m.assignedByEmail}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              {m.status === "Active" && (
+                                <button
+                                  type="button"
+                                  className="btn-revoke"
+                                  disabled={revokingId === m.userId}
+                                  onClick={() => handleRevokeRole(m.userId, m.role, m.email)}
+                                >
+                                  {revokingId === m.userId ? (
+                                    <FaSpinner className="spin" />
+                                  ) : (
+                                    <FaTrash />
+                                  )}
+                                  <span>Revoke</span>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 7. Store Audit Trail Tab */}
+          {activeTab === "audit" && (
+            <div className="store-settings-panel">
+              <div className="store-settings-panel__header">
+                <h2>Security & Store Audit Trail</h2>
+                <p>
+                  Immutable history of role assignments, configuration updates, and store lifecycle
+                  events for <strong>{tenant?.storeName || activeSlug}</strong>.
+                </p>
+              </div>
+
+              {loadingAuditLogs ? (
+                <div className="requests-loading">
+                  <FaSpinner className="spin" />
+                  <span>Loading audit log entries...</span>
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="requests-empty">
+                  <FaHistory className="requests-empty__icon" />
+                  <h3>No Audit Logs Recorded</h3>
+                  <p>Security and role actions for this store will appear here.</p>
+                </div>
+              ) : (
+                <div className="members-table-wrapper">
+                  <table className="members-table">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>Actor</th>
+                        <th>Store</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log) => (
+                        <tr key={log.auditLogId}>
+                          <td style={{ whiteSpace: "nowrap", fontSize: "0.8rem", color: "#64748b" }}>
+                            {new Date(log.createdAt).toLocaleString()}
+                          </td>
+                          <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                            {log.actorEmail || `User #${log.actorUserId || "System"}`}
+                          </td>
+                          <td style={{ fontSize: "0.85rem", color: "#2563eb" }}>
+                            {log.tenantSlug || `#${log.tenantId}`}
+                          </td>
+                          <td>
+                            <span className="audit-action-badge">{log.action}</span>
+                          </td>
+                          <td style={{ fontSize: "0.85rem", color: "#334155", maxWidth: "300px" }}>
+                            {log.details || "—"}
+                          </td>
+                          <td style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                            {log.ipAddress || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Form Submit Footer - Only for Settings tabs */}
-          {activeTab !== "requests" && (
+          {activeTab !== "requests" && activeTab !== "memberships" && activeTab !== "audit" && (
             <div className="store-settings-footer">
               <div className="store-settings-footer__info">
                 <FaCheckCircle className="footer-status-icon" />
@@ -1526,6 +2432,565 @@ export const StoreSettings: React.FC = () => {
                     <>
                       <FaBan />
                       <span>Confirm Rejection</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Request Information Modal */}
+      {infoModal.open && infoModal.request && (
+        <div className="store-modal-overlay">
+          <div className="store-modal" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+            <div className="store-modal__header">
+              <h2 id="info-modal-title">Request Information from Applicant</h2>
+              <button
+                type="button"
+                className="store-modal__close-btn"
+                onClick={() => setInfoModal({ open: false, request: null, inquiryNotes: "", adminNotes: "" })}
+                aria-label="Close modal"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleRequestInfoSubmit}>
+              <div className="store-modal__body">
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "#334155", lineHeight: 1.5 }}>
+                  Request additional details, documents, or clarifications for{" "}
+                  <strong>"{infoModal.request.storeName}"</strong> (Ref:{" "}
+                  <code>{infoModal.request.referenceNumber || infoModal.request.storeRequestId}</code>).
+                  The applicant will see this notification on their public tracking portal.
+                </p>
+
+                <div className="store-settings-field">
+                  <label htmlFor="inquiryNotes">Inquiry / Clarification Required *</label>
+                  <textarea
+                    id="inquiryNotes"
+                    required
+                    rows={4}
+                    value={infoModal.inquiryNotes}
+                    onChange={(e) => setInfoModal((prev) => ({ ...prev, inquiryNotes: e.target.value }))}
+                    placeholder="Specify exactly what information, identification, catalog details, or legal filings are required..."
+                    className="store-settings-textarea"
+                  />
+                  <span className="field-hint">This text will be visible to the applicant on /apply/status.</span>
+                </div>
+
+                <div className="store-settings-field">
+                  <label htmlFor="infoAdminNotes">Internal Admin Notes (Optional)</label>
+                  <input
+                    type="text"
+                    id="infoAdminNotes"
+                    value={infoModal.adminNotes}
+                    onChange={(e) => setInfoModal((prev) => ({ ...prev, adminNotes: e.target.value }))}
+                    placeholder="Internal memo for audit logs..."
+                    className="store-settings-input"
+                  />
+                </div>
+              </div>
+
+              <div className="store-modal__footer">
+                <button
+                  type="button"
+                  className="store-settings-btn store-settings-btn--cancel"
+                  onClick={() => setInfoModal({ open: false, request: null, inquiryNotes: "", adminNotes: "" })}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="store-req-btn store-req-btn--info"
+                  disabled={reviewing}
+                >
+                  {reviewing ? (
+                    <>
+                      <FaSpinner className="spin" />
+                      <span>Sending Request...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaQuestionCircle />
+                      <span>Send Information Request</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Comprehensive Approve & Provision Modal */}
+      {approveModal.open && approveModal.request && (
+        <div className="store-modal-overlay">
+          <div className="store-modal" style={{ maxWidth: "640px" }} role="dialog" aria-modal="true" aria-labelledby="approve-modal-title">
+            <div className="store-modal__header">
+              <h2 id="approve-modal-title">Approve & Provision Storefront</h2>
+              <button
+                type="button"
+                className="store-modal__close-btn"
+                onClick={() =>
+                  setApproveModal({
+                    open: false,
+                    request: null,
+                    adminNotes: "",
+                    assignMode: "applicant",
+                    selectedUserId: "",
+                    newAdminEmail: "",
+                    newAdminFirstName: "",
+                    newAdminLastName: "",
+                    newAdminPassword: "StoreAdmin@123!",
+                  })
+                }
+                aria-label="Close modal"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleApproveAndAssignSubmit}>
+              <div className="store-modal__body">
+                <div style={{ background: "#f8fafc", padding: "0.85rem 1rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                    {approveModal.request.storeName}
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "0.2rem" }}>
+                    Slug: <code>/store/{approveModal.request.desiredSlug}</code> • Ref: <code>{approveModal.request.referenceNumber || approveModal.request.storeRequestId}</code>
+                  </div>
+                </div>
+
+                <div className="store-settings-field">
+                  <label>Store Administrator Assignment Strategy *</label>
+                  <div className="admin-assign-box">
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                      <label className="admin-assign-option">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          value="applicant"
+                          checked={approveModal.assignMode === "applicant"}
+                          onChange={() => setApproveModal((prev) => ({ ...prev, assignMode: "applicant" }))}
+                        />
+                        <div>
+                          <strong>Assign Store Applicant as Admin</strong>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
+                            Designate {approveModal.request.ownerFirstName} {approveModal.request.ownerLastName} ({approveModal.request.contactEmail || approveModal.request.requesterEmail}). Existing account will be promoted, or a fresh account created with initial password <code>StoreAdmin@123!</code>.
+                          </div>
+                        </div>
+                      </label>
+
+                      <label className="admin-assign-option">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          value="existing"
+                          checked={approveModal.assignMode === "existing"}
+                          onChange={() => setApproveModal((prev) => ({ ...prev, assignMode: "existing" }))}
+                        />
+                        <div>
+                          <strong>Assign Existing Platform User</strong>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
+                            Select an existing registered account and grant them the StoreAdmin role.
+                          </div>
+                        </div>
+                      </label>
+
+                      {approveModal.assignMode === "existing" && (
+                        <div style={{ marginLeft: "1.5rem" }}>
+                          {loadingEligibleAdmins ? (
+                            <div style={{ fontSize: "0.85rem", color: "#64748b" }}>Loading platform users...</div>
+                          ) : (
+                            <select
+                              className="store-settings-input"
+                              value={approveModal.selectedUserId}
+                              onChange={(e) => setApproveModal((prev) => ({ ...prev, selectedUserId: Number(e.target.value) || "" }))}
+                              required={approveModal.assignMode === "existing"}
+                            >
+                              <option value="">-- Select Platform User --</option>
+                              {eligibleAdmins.map((u) => (
+                                <option key={u.userId} value={u.userId}>
+                                  {u.firstName} {u.lastName} ({u.email}) [{u.roles.join(", ") || "Customer"}]
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+
+                      <label className="admin-assign-option">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          value="new"
+                          checked={approveModal.assignMode === "new"}
+                          onChange={() => setApproveModal((prev) => ({ ...prev, assignMode: "new" }))}
+                        />
+                        <div>
+                          <strong>Create Fresh Store Administrator Account</strong>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
+                            Provision a brand-new administrator account specifically for this store.
+                          </div>
+                        </div>
+                      </label>
+
+                      {approveModal.assignMode === "new" && (
+                        <div style={{ marginLeft: "1.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                          <input
+                            type="text"
+                            placeholder="First Name"
+                            className="store-settings-input"
+                            value={approveModal.newAdminFirstName}
+                            onChange={(e) => setApproveModal((prev) => ({ ...prev, newAdminFirstName: e.target.value }))}
+                            required
+                          />
+                          <input
+                            type="text"
+                            placeholder="Last Name"
+                            className="store-settings-input"
+                            value={approveModal.newAdminLastName}
+                            onChange={(e) => setApproveModal((prev) => ({ ...prev, newAdminLastName: e.target.value }))}
+                            required
+                          />
+                          <input
+                            type="email"
+                            placeholder="Admin Email"
+                            className="store-settings-input"
+                            style={{ gridColumn: "span 2" }}
+                            value={approveModal.newAdminEmail}
+                            onChange={(e) => setApproveModal((prev) => ({ ...prev, newAdminEmail: e.target.value }))}
+                            required
+                          />
+                          <input
+                            type="password"
+                            placeholder="Temporary Password"
+                            className="store-settings-input"
+                            style={{ gridColumn: "span 2" }}
+                            value={approveModal.newAdminPassword}
+                            onChange={(e) => setApproveModal((prev) => ({ ...prev, newAdminPassword: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      )}
+
+                      <label className="admin-assign-option">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          value="defer"
+                          checked={approveModal.assignMode === "defer"}
+                          onChange={() => setApproveModal((prev) => ({ ...prev, assignMode: "defer" }))}
+                        />
+                        <div>
+                          <strong>Defer Admin Assignment (Setup Pending)</strong>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
+                            Provisions storefront in SetupPending state. Storefront remains inaccessible to shoppers until an admin is assigned later.
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="store-settings-field">
+                  <label htmlFor="approveAdminNotes">Approval Notes / Welcome Message</label>
+                  <textarea
+                    id="approveAdminNotes"
+                    rows={2}
+                    value={approveModal.adminNotes}
+                    onChange={(e) => setApproveModal((prev) => ({ ...prev, adminNotes: e.target.value }))}
+                    className="store-settings-textarea"
+                  />
+                </div>
+              </div>
+
+              <div className="store-modal__footer">
+                <button
+                  type="button"
+                  className="store-settings-btn store-settings-btn--cancel"
+                  onClick={() =>
+                    setApproveModal({
+                      open: false,
+                      request: null,
+                      adminNotes: "",
+                      assignMode: "applicant",
+                      selectedUserId: "",
+                      newAdminEmail: "",
+                      newAdminFirstName: "",
+                      newAdminLastName: "",
+                      newAdminPassword: "StoreAdmin@123!",
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="store-req-btn store-req-btn--approve"
+                  disabled={reviewing}
+                >
+                  {reviewing ? (
+                    <>
+                      <FaSpinner className="spin" />
+                      <span>Provisioning Storefront...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck />
+                      <span>Approve & Provision</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Standalone Assign Admin Modal */}
+      {assignAdminModal.open && assignAdminModal.request && (
+        <div className="store-modal-overlay">
+          <div className="store-modal" role="dialog" aria-modal="true" aria-labelledby="assign-admin-modal-title">
+            <div className="store-modal__header">
+              <h2 id="assign-admin-modal-title">Assign Store Administrator</h2>
+              <button
+                type="button"
+                className="store-modal__close-btn"
+                onClick={() =>
+                  setAssignAdminModal({
+                    open: false,
+                    request: null,
+                    mode: "existing",
+                    selectedUserId: "",
+                    newAdminEmail: "",
+                    newAdminFirstName: "",
+                    newAdminLastName: "",
+                    newAdminPassword: "StoreAdmin@123!",
+                  })
+                }
+                aria-label="Close modal"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignAdminSubmit}>
+              <div className="store-modal__body">
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "#334155", lineHeight: 1.5 }}>
+                  Assigning a Store Admin will transition <strong>"{assignAdminModal.request.storeName}"</strong> from SetupPending to <strong>Active</strong>, allowing shoppers to access the storefront.
+                </p>
+
+                <div className="store-settings-field">
+                  <div className="admin-assign-options">
+                    <label className="admin-assign-option">
+                      <input
+                        type="radio"
+                        name="assignAdminMode"
+                        value="existing"
+                        checked={assignAdminModal.mode === "existing"}
+                        onChange={() => setAssignAdminModal((prev) => ({ ...prev, mode: "existing" }))}
+                      />
+                      <span>Select Existing User</span>
+                    </label>
+                    <label className="admin-assign-option">
+                      <input
+                        type="radio"
+                        name="assignAdminMode"
+                        value="new"
+                        checked={assignAdminModal.mode === "new"}
+                        onChange={() => setAssignAdminModal((prev) => ({ ...prev, mode: "new" }))}
+                      />
+                      <span>Create New Account</span>
+                    </label>
+                  </div>
+
+                  {assignAdminModal.mode === "existing" ? (
+                    <div>
+                      {loadingEligibleAdmins ? (
+                        <div style={{ fontSize: "0.85rem", color: "#64748b" }}>Loading platform users...</div>
+                      ) : (
+                        <select
+                          className="store-settings-input"
+                          value={assignAdminModal.selectedUserId}
+                          onChange={(e) => setAssignAdminModal((prev) => ({ ...prev, selectedUserId: Number(e.target.value) || "" }))}
+                          required
+                        >
+                          <option value="">-- Select Platform User --</option>
+                          {eligibleAdmins.map((u) => (
+                            <option key={u.userId} value={u.userId}>
+                              {u.firstName} {u.lastName} ({u.email}) [{u.roles.join(", ") || "Customer"}]
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                      <input
+                        type="text"
+                        placeholder="First Name"
+                        className="store-settings-input"
+                        value={assignAdminModal.newAdminFirstName}
+                        onChange={(e) => setAssignAdminModal((prev) => ({ ...prev, newAdminFirstName: e.target.value }))}
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Last Name"
+                        className="store-settings-input"
+                        value={assignAdminModal.newAdminLastName}
+                        onChange={(e) => setAssignAdminModal((prev) => ({ ...prev, newAdminLastName: e.target.value }))}
+                        required
+                      />
+                      <input
+                        type="email"
+                        placeholder="Admin Email"
+                        className="store-settings-input"
+                        style={{ gridColumn: "span 2" }}
+                        value={assignAdminModal.newAdminEmail}
+                        onChange={(e) => setAssignAdminModal((prev) => ({ ...prev, newAdminEmail: e.target.value }))}
+                        required
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        className="store-settings-input"
+                        style={{ gridColumn: "span 2" }}
+                        value={assignAdminModal.newAdminPassword}
+                        onChange={(e) => setAssignAdminModal((prev) => ({ ...prev, newAdminPassword: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="store-modal__footer">
+                <button
+                  type="button"
+                  className="store-settings-btn store-settings-btn--cancel"
+                  onClick={() =>
+                    setAssignAdminModal({
+                      open: false,
+                      request: null,
+                      mode: "existing",
+                      selectedUserId: "",
+                      newAdminEmail: "",
+                      newAdminFirstName: "",
+                      newAdminLastName: "",
+                      newAdminPassword: "StoreAdmin@123!",
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="store-req-btn store-req-btn--assign"
+                  disabled={reviewing}
+                >
+                  {reviewing ? (
+                    <>
+                      <FaSpinner className="spin" />
+                      <span>Assigning...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaUserCog />
+                      <span>Assign Admin & Activate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Store Role Modal */}
+      {showAssignModal && (
+        <div className="store-modal-overlay">
+          <div
+            className="store-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-role-title"
+          >
+            <div className="store-modal__header">
+              <h2 id="assign-role-title">Assign Store Role</h2>
+              <button
+                type="button"
+                className="store-modal__close-btn"
+                onClick={() => setShowAssignModal(false)}
+                aria-label="Close modal"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignRole}>
+              <div className="store-modal__body">
+                <div className="store-settings-field">
+                  <label htmlFor="assignEmail">User Email Address *</label>
+                  <input
+                    type="email"
+                    id="assignEmail"
+                    required
+                    value={newMembership.email}
+                    onChange={(e) =>
+                      setNewMembership((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="user@example.com"
+                    className="store-settings-input"
+                  />
+                  <span className="field-hint">
+                    The user must have an existing account on the platform.
+                  </span>
+                </div>
+
+                <div className="store-settings-field">
+                  <label htmlFor="assignRoleSelect">Store Role *</label>
+                  <select
+                    id="assignRoleSelect"
+                    className="tenant-picker__select"
+                    style={{ width: "100%" }}
+                    value={newMembership.role}
+                    onChange={(e) =>
+                      setNewMembership((prev) => ({ ...prev, role: e.target.value }))
+                    }
+                  >
+                    <option value="StoreSeller">StoreSeller (Manage products & inventory)</option>
+                    <option value="StoreAdmin">StoreAdmin (Full store manager & settings)</option>
+                    <option value="StoreCustomer">StoreCustomer (Verified store shopper)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="store-modal__footer">
+                <button
+                  type="button"
+                  className="store-settings-btn store-settings-btn--cancel"
+                  onClick={() => setShowAssignModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="store-settings-btn store-settings-btn--save"
+                  disabled={assigningRole}
+                >
+                  {assigningRole ? (
+                    <>
+                      <FaSpinner className="spin" />
+                      <span>Assigning...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaUserPlus />
+                      <span>Assign Role</span>
                     </>
                   )}
                 </button>

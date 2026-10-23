@@ -1,9 +1,10 @@
-import React, { useRef, useState, ChangeEvent, FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import React, { useRef, useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import "./Auth.css";
 import axios, { AxiosError } from "axios";
 import { useAuth } from "./useAuth";
-import LoadingBar, { LoadingBarRef } from "react-top-loading-bar"; // Import LoadingBarRef
+import { useTenant } from "../../Context/TenantContext";
+import LoadingBar, { LoadingBarRef } from "react-top-loading-bar";
 import "react-toastify/dist/ReactToastify.css";
 import { useToast } from "../../Utils/Helper/ToastNotifications";
 import { setStoredAuth } from "../../Utils/Helper/authHelpers";
@@ -23,7 +24,7 @@ interface FormData {
 interface ApiResponse {
   success: boolean;
   message?: string;
-  content?: string;
+  content?: string | { token?: string };
 }
 
 interface AuthProps {
@@ -33,10 +34,20 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ mode }) => {
   const ref = useRef<LoadingBarRef | null>(null);
   const { token, setToken } = useAuth();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const { tenant, settings, switchTenant } = useTenant();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const isSignIn = mode === "signin";
+  const targetSlug = storeSlug || tenant?.slug || "default";
+
+  useEffect(() => {
+    if (storeSlug && storeSlug !== tenant?.slug) {
+      switchTenant(storeSlug);
+    }
+  }, [storeSlug, tenant?.slug, switchTenant]);
+
   const [formData, setFormData] = useState<FormData>({
     userName: "",
     firstName: "",
@@ -50,7 +61,7 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
   const [loading, setLoading] = useState<boolean>(false);
 
   if (token) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to={`/store/${storeSlug || "default"}`} replace />;
   }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -67,21 +78,23 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
     if (loading) return;
 
     setLoading(true);
-    // setError("");
     ref.current?.continuousStart();
 
+    const effectiveSlug = targetSlug || "default";
     const apiUrl: string = isSignIn
-      ? "https://localhost:44314/api/Auth/Login"
-      : "https://localhost:44314/api/Auth/Register";
+      ? `https://localhost:44314/api/store/${effectiveSlug}/auth/login`
+      : `https://localhost:44314/api/store/${effectiveSlug}/auth/register`;
 
-    const requestBody = {
-      Entity: isSignIn
-        ? {
+    const requestBody = isSignIn
+      ? { email: formData.email, password: formData.password }
+      : {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
-          password: formData.password
-        }
-        : { ...formData }
-    };
+          password: formData.password,
+          address: formData.address,
+          phoneNumber: formData.phoneNumber
+        };
 
     try {
       const response = await axios.post<ApiResponse>(apiUrl, requestBody);
@@ -89,36 +102,39 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
       if (!response.data.success) {
         showToast("error", response.data.message || "Request failed");
       } else {
-        const token: string | undefined = response.data.content;
-        if (token) {
-          setStoredAuth(token);
-          setToken(token);
+        const rawContent = response.data.content;
+        const authToken: string | undefined = typeof rawContent === "string" 
+          ? rawContent 
+          : rawContent?.token;
+
+        if (authToken) {
+          setStoredAuth(authToken);
+          setToken(authToken);
 
           showToast(
             "success",
-            isSignIn ? "Sign In Successful" : "Sign Up Successful"
+            isSignIn ? `Signed in to ${tenant?.storeName || "Store"}!` : "Account Created Successfully!"
           );
 
           if (!isSignIn) {
-            navigate("/confirm", { state: { email: formData.email } });
+            navigate("/confirm", { state: { email: formData.email, storeSlug: storeSlug || "default" } });
           } else {
-            navigate("/home");
+            navigate(`/store/${storeSlug || "default"}`);
           }
         } else {
           showToast("success", response.data.message || "Operation successful");
         }
       }
     } catch (err: unknown) {
-      const error = err as AxiosError<{ message: string }>;
+      const error = err as AxiosError<{ message?: string }>;
       console.error("Error:", error);
 
       const errorMessage: string =
         error.response?.data?.message || "An error occurred. Please try again.";
 
-      // setError(errorMessage);
       showToast("error", errorMessage);
     } finally {
-      ref.current?.complete(); // Complete the loading bar
+      ref.current?.complete();
       setLoading(false);
     }
   };
@@ -126,24 +142,35 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
   return (
     <div className={`auth-container ${isSignIn ? "auth-container--signin" : "auth-container--signup"}`}>
       <LoadingBar color="#f11946" ref={ref} />
-      {/* <ToastContainer position="bottom-center" autoClose={5000} /> */}
       <div className="auth-left">
         <div className="quote-content">
-          <p className="quote-label">A WISE QUOTE</p>
-          <h1 className="quote-title">Get Everything You Want</h1>
+          {settings?.logoUrl && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <img
+                src={settings.logoUrl}
+                alt={tenant?.storeName || "Store Logo"}
+                style={{ maxHeight: "60px", maxWidth: "180px", objectFit: "contain" }}
+              />
+            </div>
+          )}
+          <p className="quote-label" style={{ letterSpacing: "2px", textTransform: "uppercase" }}>
+            {tenant?.storeName ? `${tenant.storeName} OFFICIAL STORE` : "A WISE QUOTE"}
+          </p>
+          <h1 className="quote-title">
+            {settings?.heroTitle || "Get Everything You Want"}
+          </h1>
           <p className="quote-subtitle">
-            You can get everything you want if you work hard, trust the process,
-            and stick to the plan.
+            {settings?.heroSubtitle || "You can get everything you want if you work hard, trust the process, and stick to the plan."}
           </p>
         </div>
       </div>
       <div className="auth-right">
         <div className="auth-header">
-          <h2>{isSignIn ? "Welcome Back" : "Create an Account"}</h2>
+          <h2>{isSignIn ? `Welcome to ${tenant?.storeName || "Style Thread"}` : `Join ${tenant?.storeName || "Style Thread"}`}</h2>
           <p className="auth-description">
             {isSignIn
-              ? "Enter your email and password to access your account"
-              : "Fill in the fields to create a new account"}
+              ? `Sign in to access your ${tenant?.storeName || "Style Thread"} account`
+              : `Create an account to shop at ${tenant?.storeName || "Style Thread"}`}
           </p>
         </div>
         <form className="auth-form" onSubmit={handleSubmit} aria-busy={loading}>
@@ -271,7 +298,7 @@ export const Auth: React.FC<AuthProps> = ({ mode }) => {
             type="button"
             className="toggle-link"
             disabled={loading}
-            onClick={() => navigate(isSignIn ? "/signup" : "/signin")}
+            onClick={() => navigate(isSignIn ? `/store/${storeSlug || "default"}/signup` : `/store/${storeSlug || "default"}/signin`)}
           >
             {isSignIn ? "Sign Up" : "Sign In"}
           </button>

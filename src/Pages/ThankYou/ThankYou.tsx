@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./ThankYou.css";
 
 interface ThankYouLocationState {
@@ -8,6 +8,8 @@ interface ThankYouLocationState {
 
 const ThankYou: React.FC = () => {
   const navigate = useNavigate();
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const currentStoreSlug = storeSlug || "default";
   const location = useLocation();
   const state = location.state as ThankYouLocationState | null;
   const paymentId = state?.paymentId;
@@ -39,7 +41,7 @@ const ThankYou: React.FC = () => {
             Payment reference <strong>••••{paymentId.slice(-8)}</strong>
           </p>
         )}
-        <button className="thank-you__button" onClick={() => navigate("/home")}>
+        <button className="thank-you__button" onClick={() => navigate(`/store/${currentStoreSlug}`)}>
           Continue shopping
         </button>
       </section>

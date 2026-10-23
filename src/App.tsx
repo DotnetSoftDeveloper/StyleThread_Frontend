@@ -1,129 +1,33 @@
-import "./App.css";
-import About from "./Pages/About/About";
-import {  Navigate, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./ProtectedRoute";
-import PublicRoute from "./PublicRoute";
-import NoContentFound from "./NoContentFound";
-import ProductList from "./Components/ProductList/ProductList";
-import ProductDetail from "./Pages/ProductDetail/ProductDetail";
-import Home from "./Pages/Home/Home";
-import Navbar from "./Shared/Navbar";
-import AddProduct from "./Pages/AddProduct/AddProduct";
-import Cart from "./Pages/Cart/Cart";
-import Profile from "./Pages/Profile/Profile";
-import Footer from "./Shared/Footer";
 import React from "react";
-import Confirm from "./Pages/Login/Confirm";
-import { Auth } from "./Pages/Login/Auth";
-
-import ForgotPassword from "./Pages/Login/ForgotPassword";
-import ResetPassword from "./Pages/Login/ResetPassword";
-import ThankYou from "./Pages/ThankYou/ThankYou";
-import StoreSettings from "./Pages/Admin/StoreSettings";
+import { Route, Routes } from "react-router-dom";
+import "./App.css";
+import NoContentFound from "./NoContentFound";
+import renderPublicRoutes from "./app/router/public.routes";
+import renderSuperAdminRoutes from "./app/router/superAdmin.routes";
+import renderStoreAdminRoutes from "./app/router/storeAdmin.routes";
+import renderStorefrontRoutes from "./app/router/storefront.routes";
 
 const App: React.FC = () => {
   return (
-      <div className="App">
-        <Navbar />
-     
-          <Routes>
-            {/* Redirect root "/" to "/home" */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
+    <div className="App">
+      <Routes>
+        {/* 1. DukaanOnline Public Business Website */}
+        {renderPublicRoutes()}
 
-            {/* Public routes */}
-            <Route path="/home" element={<Home />} />
-            <Route
-              path="/signin"
-              element={<PublicRoute element={<Auth mode="signin" />} />}
-            />
-            <Route
-              path="/signup"
-              element={<PublicRoute element={<Auth mode="signup" />} />}
-            />
-            <Route path="/confirm" element={<Confirm />} />
-            <Route path="/about" element={<About />} />
-            <Route
-              path="/forgot-password"
-              element={<PublicRoute element={<ForgotPassword />} />}
-            />
-            <Route
-              path="/reset-password"
-              element={<PublicRoute element={<ResetPassword />} />}
-            />
-            <Route path="/thank-you" element={<ThankYou />} />
-            {/* Protected routes */}
-            <Route
-              path="/store-settings"
-              element={
-                <ProtectedRoute
-                  element={StoreSettings}
-                  allowedRoles={["SuperAdministrator", "Administrator"]}
-                />
-              }
-            />
-            <Route
-              path="/productList"
-              element={
-                <ProtectedRoute
-                  element={ProductList}
-                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
-                />
-              }
-            />
-            <Route
-              path="/addProduct"
-              element={
-                <ProtectedRoute
-                  element={AddProduct}
-                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
-                />
-              }
-            />
-            <Route
-              path="/editProduct/:id"
-              element={
-                <ProtectedRoute
-                  element={(props) => <AddProduct {...props} />}
-                  allowedRoles={["SuperAdministrator", "Administrator", "Seller"]}
-                />
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute
-                  element={Profile}
-                  allowedRoles={["SuperAdministrator", "Administrator", "Seller", "Visitor"]}
-                />
-              }
-            />
-            <Route
-              path="/product/:id"
-              element={
-                <div className="product-form">
-                  <ProductDetail />
-                </div>
-              }
-            />
-            <Route
-              path="/cart"
-              element={
-                <div className="product-form">
-                  <ProtectedRoute
-                    element={Cart}
-                    allowedRoles={["SuperAdministrator", "Administrator", "Seller", "Visitor"]}
-                  />
-                </div>
-              }
-            />
+        {/* 2. Super Admin Platform Control Center */}
+        {renderSuperAdminRoutes()}
 
-            {/* 404 - No content found */}
-            <Route path="/NoContentFound" element={<NoContentFound />} />
-            <Route path="*" element={<NoContentFound />} />
-          </Routes>
+        {/* 3. Store Admin Merchant Management Portal */}
+        {renderStoreAdminRoutes()}
 
-        <Footer />
-      </div>
+        {/* 4. Client Shopping Storefronts */}
+        {renderStorefrontRoutes()}
+
+        {/* 404 Fallback */}
+        <Route path="/NoContentFound" element={<NoContentFound />} />
+        <Route path="*" element={<NoContentFound />} />
+      </Routes>
+    </div>
   );
 };
 

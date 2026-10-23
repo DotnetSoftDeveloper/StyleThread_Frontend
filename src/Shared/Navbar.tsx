@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../Pages/Login/useAuth";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,8 +9,9 @@ import peopleIcon from "../Assests/people.png";
 import stylethread from "../Assests/STW_Logo.png";
 import { CartItem } from "../Types/Interface/ICart";
 import { fetchCart, clearCartList } from "../Store/EntitySlices";
+import { fetchWishlistIds, clearWishlist } from "../Store/WishlistSlice";
 import { jwtDecode } from "jwt-decode";
-import { FaSearch, FaBars, FaTimes } from "react-icons/fa"; // 🔍 Menu icons
+import { FaSearch, FaBars, FaTimes, FaHeart } from "react-icons/fa"; // 🔍 Menu & heart icons
 import { useTenant } from "../Context/TenantContext";
 
 interface CustomerData {
@@ -22,10 +23,25 @@ interface CustomerData {
 
 const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { token, role } = useAuth();
-  const { tenant, settings } = useTenant();
+  const { token, role, tenantRole } = useAuth();
+  const { tenant, settings, activeSlug } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isStoreAdminUser =
+    role === "Administrator" ||
+    role === "SuperAdministrator" ||
+    role === "StoreAdmin" ||
+    tenantRole === "StoreAdmin";
+
+  const currentSlug = activeSlug || "default";
+  const storePrefix = `/store/${currentSlug}`;
+  const homePath = storePrefix;
+  const cartPath = `${storePrefix}/cart`;
+  const wishlistPath = `${storePrefix}/wishlist`;
+  const profilePath = `${storePrefix}/profile`;
+  const signinPath = `${storePrefix}/signin`;
+  const aboutPath = `${storePrefix}/about`;
 
   const cartItems = useSelector(
     (state: RootState) => (state.cartItem?.list as CartItem[]) || [],
@@ -34,23 +50,60 @@ const Navbar: React.FC = () => {
     (sum, item) => sum + (item.quantity ?? 0),
     0,
   );
+  const wishlistCount = useSelector(
+    (state: RootState) => state.wishlist?.itemIds?.length ?? 0
+  );
 
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    setSearchTerm(new URLSearchParams(location.search).get("search") ?? "");
-  }, [location.search]);
+  const navRef = useRef<HTMLElement | null>(null);
 
-  // ✅ On login: fetch cart | On logout: clear cart
+  // Dynamically measure navbar height and expose to CSS as --navbar-height
+  useEffect(() => {
+    const updateNavbarHeight = () => {
+      if (navRef.current) {
+        const height = Math.round(navRef.current.getBoundingClientRect().height);
+        if (height > 0) {
+          document.documentElement.style.setProperty("--navbar-height", `${height}px`);
+        }
+      }
+    };
+
+    updateNavbarHeight();
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && navRef.current) {
+      observer = new ResizeObserver(() => {
+        updateNavbarHeight();
+      });
+      observer.observe(navRef.current);
+    }
+
+    window.addEventListener("resize", updateNavbarHeight);
+    document.body.classList.add("has-navbar");
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+      if (observer) {
+        observer.disconnect();
+      }
+      document.body.classList.remove("has-navbar");
+      document.documentElement.style.removeProperty("--navbar-height");
+    };
+  }, [location.pathname, showMobileSearch, isMenuOpen]);
+
+  // ✅ On login: fetch cart & wishlist | On logout: clear cart & wishlist
   useEffect(() => {
     if (token) {
       const clientData = jwtDecode<CustomerData>(token);
       const id = Number(clientData.userId);
       dispatch(fetchCart({ customerId: id }));
+      dispatch(fetchWishlistIds());
     } else {
       dispatch(clearCartList());
+      dispatch(clearWishlist());
     }
   }, [token, dispatch]);
 
@@ -59,9 +112,9 @@ const Navbar: React.FC = () => {
   ) => {
     if (!token) {
       event.preventDefault();
-      navigate("/signin");
+      navigate(signinPath);
     } else {
-      navigate("/cart");
+      navigate(cartPath);
     }
   };
 
@@ -74,17 +127,17 @@ const Navbar: React.FC = () => {
       params.set("search", trimmedTerm);
     }
 
-    navigate({ pathname: "/home", search: params.toString() });
+    navigate({ pathname: homePath, search: params.toString() });
     setShowMobileSearch(false);
   };
 
   return (
     <div>
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
+      <nav ref={navRef} className="navbar navbar-expand-lg navbar-light bg-light">
         {/* Left Section */}
         <div className="navbar-left">
           <div className="ST-Logo">
-            <Link to="/home" className="nav-link">
+            <Link to={homePath} className="nav-link">
               <img
                 src={settings?.logoUrl || stylethread}
                 alt={`${tenant?.storeName || "Style Thread"} Logo`}
@@ -94,20 +147,13 @@ const Navbar: React.FC = () => {
               />
             </Link>
           </div>
-          <Link to="/home" className="nav-link">
+          <Link to={homePath} className="nav-link">
             <div className="logo-text">{tenant?.storeName || "Style Thread"}</div>
           </Link>
           <div className="desktop-nav">
-            <Link to="/home">Home</Link>
-            <Link to="/about">About</Link>
+            <Link to={homePath}>Home</Link>
+            <Link to={aboutPath}>About</Link>
             <Link to="/contact">Contact</Link>
-
-            {(role === "Administrator" || role === "SuperAdministrator" || role === "Seller") && (
-              <Link to="/productList">Products</Link>
-            )}
-            {(role === "Administrator" || role === "SuperAdministrator") && (
-              <Link to="/store-settings">Store Settings</Link>
-            )}
           </div>
         </div>
 
@@ -158,22 +204,59 @@ const Navbar: React.FC = () => {
 
         {/* Right Section */}
         <div className="navbar-right">
+          <div className="wishlist-icon">
+            <Link
+              to={wishlistPath}
+              title="My Wishlist"
+              className="wishlist-nav-link"
+              onClick={(e) => {
+                if (!token) {
+                  e.preventDefault();
+                  navigate(signinPath);
+                }
+              }}
+            >
+              <FaHeart className="wishlist-nav-heart" />
+              {wishlistCount > 0 && <span className="wishlist-count">{wishlistCount}</span>}
+            </Link>
+          </div>
+
           <div className="cart-icon">
-            <Link to="/cart" onClick={handleCartClick}>
+            <Link to={cartPath} onClick={handleCartClick}>
               <img src={shoppingCart} alt="Shopping Cart" />
               {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
             </Link>
           </div>
 
           {token ? (
-            <div className="profile-icon">
-              <Link to="/profile" title="My Profile">
-                <img src={peopleIcon} alt="Profile Icon" />
-              </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              {isStoreAdminUser && (
+                <Link
+                  to="/admin/dashboard"
+                  style={{
+                    textDecoration: "none",
+                    color: "#ffffff",
+                    backgroundColor: "var(--brand-teal, #0d9488)",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.02em",
+                  }}
+                  title="Switch to Store Admin Portal"
+                >
+                  Admin Portal
+                </Link>
+              )}
+              <div className="profile-icon">
+                <Link to={profilePath} title="My Profile">
+                  <img src={peopleIcon} alt="Profile Icon" />
+                </Link>
+              </div>
             </div>
           ) : (
             <Link
-              to="/signin"
+              to={signinPath}
               style={{
                 textDecoration: "none",
                 color: "#1f2937",
@@ -203,31 +286,24 @@ const Navbar: React.FC = () => {
       {/* Mobile Menu Dropdown */}
       {isMenuOpen && (
         <div className="mobile-menu">
-          <Link to="/home" onClick={() => setIsMenuOpen(false)}>
+          <Link to={homePath} onClick={() => setIsMenuOpen(false)}>
             Home
           </Link>
-          <Link to="/about" onClick={() => setIsMenuOpen(false)}>
+          <Link to={aboutPath} onClick={() => setIsMenuOpen(false)}>
             About
           </Link>
           <Link to="/contact" onClick={() => setIsMenuOpen(false)}>
             Contact
           </Link>
-          {(role === "Administrator" || role === "SuperAdministrator" || role === "Seller") && (
-            <Link to="/productList" onClick={() => setIsMenuOpen(false)}>
-              Products
-            </Link>
-          )}
-          {(role === "Administrator" || role === "SuperAdministrator") && (
-            <Link to="/store-settings" onClick={() => setIsMenuOpen(false)}>
-              Store Settings
-            </Link>
-          )}
+          <Link to={wishlistPath} onClick={() => setIsMenuOpen(false)}>
+            Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
+          </Link>
           {token ? (
-            <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+            <Link to={profilePath} onClick={() => setIsMenuOpen(false)}>
               My Profile
             </Link>
           ) : (
-            <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
+            <Link to={signinPath} onClick={() => setIsMenuOpen(false)}>
               Sign In
             </Link>
           )}

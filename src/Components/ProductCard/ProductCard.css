@@ -43,6 +43,14 @@
   padding: 0.85rem 0.95rem;
 }
 
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .rowDesign .sponsored {
   display: inline-block;
   color: #9ca3af;
@@ -50,7 +58,45 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
+}
+
+.card-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card-rating-badge--new {
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.card-star-icon {
+  font-size: 0.7rem;
+  color: #f59e0b;
+}
+
+.card-star-icon--muted {
+  color: #94a3b8;
+}
+
+.card-rating-num {
+  font-weight: 700;
+}
+
+.card-rating-count {
+  font-size: 0.68rem;
+  color: #b45309;
+  font-weight: 500;
 }
 
 .rowDesign .card-text {
@@ -154,4 +200,64 @@
     font-size: 0.7rem;
     margin-top: 0.25rem;
   }
+}
+
+/* Wishlist Floating Button on Card */
+.card-wishlist-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+}
+
+.card-wishlist-btn:hover {
+  transform: scale(1.12);
+  background: #ffffff;
+}
+
+.card-wishlist-heart {
+  font-size: 1.05rem;
+  color: #9ca3af;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.card-wishlist-btn--active .card-wishlist-heart {
+  color: #ef4444;
+}
+
+/* Stock Badges on Card */
+.card-stock-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  padding: 0.25rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.card-stock-pill--out {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.card-stock-pill--low {
+  background-color: #f59e0b;
+  color: #ffffff;
 }
